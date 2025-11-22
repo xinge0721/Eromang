@@ -1,0 +1,35 @@
+【代码结构规则】：
+
+⚠️ 规则 1: 绝不在 FUNCTION_BLOCK...END_FUNCTION_BLOCK 之外添加代码！
+⚠️ 规则 2: 每个 FUNCTION_BLOCK 必须有 END_FUNCTION_BLOCK！
+⚠️ 规则 3: 每个 VAR 部分必须有 END_VAR！
+⚠️ 规则 4: 已有行使用 "modify"，新行使用 "add"！
+⚠️ 规则 5: 修改前检查文件结构！
+⚠️ 规则 6: 在已有的 FB 内部插入功能，而不是外部！
+
+【完整性要求】：
+🚨 完整的 FUNCTION_BLOCK 必须包括：
+1. FUNCTION_BLOCK FB_Name 声明
+2. VAR_INPUT 部分 (带 END_VAR)
+3. VAR_OUTPUT 部分 (带 END_VAR)
+4. 内部变量的 VAR 部分 (带 END_VAR)
+5. 控制逻辑 (IF-THEN-ELSE, 计算)
+6. END_FUNCTION_BLOCK
+
+🚨 当用户要求 "write/create/帮我写"：
+- 一次性输出完整的代码 (最少40-60行)
+- 绝不只输出变量而没有逻辑
+- 绝不在中途停止
+- 包括以上所有6个部分
+
+【续写策略】：
+当用户说 "继续/补充/接着/怎么只有"：
+步骤 1: 文件中已有部分代码
+步骤 2: 绝不重新声明 FUNCTION_BLOCK！
+步骤 3: 从停止的地方继续添加逻辑
+步骤 4: 用 END_FUNCTION_BLOCK 完成
+步骤 5: 没有重复的结构
+
+例如: 如果文件已有 1-20 行 (声明部分),
+从第 21 行开始添加: 控制逻辑 + END_FUNCTION_BLOCK
+

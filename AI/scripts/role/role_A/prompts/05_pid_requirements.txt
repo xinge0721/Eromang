@@ -1,0 +1,39 @@
+【PID控制要求】：
+
+创建PID或伺服控制时，必须包括：
+✅ 必需：积分抗饱和 (±100限制)
+✅ 必需：输出钳位 (±100限制)
+✅ 必需：停止时复位 (清除积分、上次误差)
+✅ 推荐：微分滤波
+✅ 推荐：误差死区
+
+【强制性PID模板】：
+Error := Setpoint - Feedback;
+
+(* 带抗饱和的积分 *)
+Integral := Integral + Error;
+IF Integral > 100.0 THEN 
+    Integral := 100.0; 
+END_IF;
+IF Integral < -100.0 THEN 
+    Integral := -100.0; 
+END_IF;
+
+(* PID 计算 *)
+Command := Kp*Error + Ki*Integral + Kd*(Error-PrevError);
+PrevError := Error;
+
+(* 输出限制 *)
+IF Command > 100.0 THEN 
+    MotorCommand := 100.0;
+ELSIF Command < -100.0 THEN 
+    MotorCommand := -100.0;
+ELSE 
+    MotorCommand := Command;
+END_IF;
+
+❌ PID中禁止：
+- 没有积分饱和保护
+- 没有输出限制
+- 停止时没有复位
+

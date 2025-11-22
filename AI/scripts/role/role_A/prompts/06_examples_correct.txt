@@ -1,0 +1,169 @@
+【正确示例】：
+
+【示例 1 - 创建完整程序】：
+用户: "帮我写一个PLC程序"
+助手: "好的，我将为您创建一个标准的电机控制功能块。
+{
+  "类型": "文件编辑",
+  "参数": {
+    "新增": [
+      {"文件路径": "Data/plc_program.st", "行": 1, "内容": "FUNCTION_BLOCK FB_MotorControl"},
+      {"文件路径": "Data/plc_program.st", "行": 2, "内容": "VAR_INPUT"},
+      {"文件路径": "Data/plc_program.st", "行": 3, "内容": "    Start : BOOL;"},
+      {"文件路径": "Data/plc_program.st", "行": 4, "内容": "    Stop : BOOL;"},
+      {"文件路径": "Data/plc_program.st", "行": 5, "内容": "END_VAR"},
+      {"文件路径": "Data/plc_program.st", "行": 6, "内容": "VAR_OUTPUT"},
+      {"文件路径": "Data/plc_program.st", "行": 7, "内容": "    Motor : BOOL;"},
+      {"文件路径": "Data/plc_program.st", "行": 8, "内容": "END_VAR"},
+      {"文件路径": "Data/plc_program.st", "行": 9, "内容": ""},
+      {"文件路径": "Data/plc_program.st", "行": 10, "内容": "IF Start AND NOT Stop THEN"},
+      {"文件路径": "Data/plc_program.st", "行": 11, "内容": "    Motor := TRUE;"},
+      {"文件路径": "Data/plc_program.st", "行": 12, "内容": "ELSIF Stop THEN"},
+      {"文件路径": "Data/plc_program.st", "行": 13, "内容": "    Motor := FALSE;"},
+      {"文件路径": "Data/plc_program.st", "行": 14, "内容": "END_IF;"},
+      {"文件路径": "Data/plc_program.st", "行": 15, "内容": "END_FUNCTION_BLOCK"}
+    ],
+    "修改": [],
+    "删除": [],
+    "创建文件": [],
+    "删除文件": []
+  }
+}
+完成！您可以导入到TIA Portal中使用。"
+
+【示例 2 - 增量修改："加入PID"】：
+用户: "我想加入PID控制的逻辑"
+
+当前文件内容（15行）：
+```
+1: FUNCTION_BLOCK FB_MotorControl
+2: VAR_INPUT
+3:     Start : BOOL;
+4:     Stop : BOOL;
+5: END_VAR
+6: VAR_OUTPUT
+7:     Motor : BOOL;
+8: END_VAR
+9: 
+10: IF Start AND NOT Stop THEN
+11:     Motor := TRUE;
+12: ELSIF Stop THEN
+13:     Motor := FALSE;
+14: END_IF;
+15: END_FUNCTION_BLOCK
+```
+
+助手: "好的，我将在现有程序基础上添加PID控制逻辑。
+{
+  "类型": "文件编辑",
+  "参数": {
+    "新增": [
+      {"文件路径": "Data/plc_program.st", "行": 5, "内容": "    Setpoint : REAL;"},
+      {"文件路径": "Data/plc_program.st", "行": 6, "内容": "    Feedback : REAL;"},
+      {"文件路径": "Data/plc_program.st", "行": 10, "内容": "    PIDOutput : REAL;"},
+      {"文件路径": "Data/plc_program.st", "行": 12, "内容": "VAR"},
+      {"文件路径": "Data/plc_program.st", "行": 13, "内容": "    Error : REAL := 0.0;"},
+      {"文件路径": "Data/plc_program.st", "行": 14, "内容": "    Integral : REAL := 0.0;"},
+      {"文件路径": "Data/plc_program.st", "行": 15, "内容": "    PrevError : REAL := 0.0;"},
+      {"文件路径": "Data/plc_program.st", "行": 16, "内容": "    Kp : REAL := 1.0;"},
+      {"文件路径": "Data/plc_program.st", "行": 17, "内容": "    Ki : REAL := 0.1;"},
+      {"文件路径": "Data/plc_program.st", "行": 18, "内容": "    Kd : REAL := 0.05;"},
+      {"文件路径": "Data/plc_program.st", "行": 19, "内容": "END_VAR"},
+      {"文件路径": "Data/plc_program.st", "行": 20, "内容": ""},
+      {"文件路径": "Data/plc_program.st", "行": 21, "内容": "(* PID Control *)"},
+      {"文件路径": "Data/plc_program.st", "行": 22, "内容": "Error := Setpoint - Feedback;"},
+      {"文件路径": "Data/plc_program.st", "行": 23, "内容": "Integral := Integral + Error;"},
+      {"文件路径": "Data/plc_program.st", "行": 24, "内容": "IF Integral > 100.0 THEN Integral := 100.0; END_IF;"},
+      {"文件路径": "Data/plc_program.st", "行": 25, "内容": "IF Integral < -100.0 THEN Integral := -100.0; END_IF;"},
+      {"文件路径": "Data/plc_program.st", "行": 26, "内容": "PIDOutput := Kp*Error + Ki*Integral + Kd*(Error-PrevError);"},
+      {"文件路径": "Data/plc_program.st", "行": 27, "内容": "PrevError := Error;"}
+    ],
+    "修改": [],
+    "删除": [],
+    "创建文件": [],
+    "删除文件": []
+  }
+}
+完成！PID控制已集成到现有程序中。"
+
+【示例 3 - 使用modify修改参数】：
+用户: "把Kp改成2.0，Ki改成0.5"
+
+当前文件第16-18行：
+```
+16:     Kp : REAL := 1.0;
+17:     Ki : REAL := 0.1;
+18:     Kd : REAL := 0.05;
+```
+
+助手: "好的，我将修改PID参数。
+{
+  "类型": "文件编辑",
+  "参数": {
+    "新增": [],
+    "修改": [
+      {"文件路径": "Data/plc_program.st", "行": 16, "内容": "    Kp : REAL := 2.0;"},
+      {"文件路径": "Data/plc_program.st", "行": 17, "内容": "    Ki : REAL := 0.5;"}
+    ],
+    "删除": [],
+    "创建文件": [],
+    "删除文件": []
+  }
+}
+完成！PID参数已更新。"
+
+【示例 4 - 使用delete删除功能】：
+用户: "删除PID控制"
+
+当前文件内容（46行）：
+- 第5-6行：Setpoint, Feedback（VAR_INPUT中）
+- 第10行：PIDOutput（VAR_OUTPUT中）
+- 第12-19行：整个VAR段（PID变量）
+- 第31-42行：PID Control逻辑
+
+助手: "好的，我将删除PID控制相关代码。
+{
+  "类型": "文件编辑",
+  "参数": {
+    "新增": [],
+    "修改": [],
+    "删除": [
+      {"文件路径": "Data/plc_program.st", "行": 5},
+      {"文件路径": "Data/plc_program.st", "行": 6},
+      {"文件路径": "Data/plc_program.st", "行": 10},
+      {"文件路径": "Data/plc_program.st", "行": 12},
+      {"文件路径": "Data/plc_program.st", "行": 13},
+      {"文件路径": "Data/plc_program.st", "行": 14},
+      {"文件路径": "Data/plc_program.st", "行": 15},
+      {"文件路径": "Data/plc_program.st", "行": 16},
+      {"文件路径": "Data/plc_program.st", "行": 17},
+      {"文件路径": "Data/plc_program.st", "行": 18},
+      {"文件路径": "Data/plc_program.st", "行": 19},
+      {"文件路径": "Data/plc_program.st", "行": 31},
+      {"文件路径": "Data/plc_program.st", "行": 32},
+      {"文件路径": "Data/plc_program.st", "行": 33},
+      {"文件路径": "Data/plc_program.st", "行": 34},
+      {"文件路径": "Data/plc_program.st", "行": 35},
+      {"文件路径": "Data/plc_program.st", "行": 36},
+      {"文件路径": "Data/plc_program.st", "行": 37},
+      {"文件路径": "Data/plc_program.st", "行": 38},
+      {"文件路径": "Data/plc_program.st", "行": 39},
+      {"文件路径": "Data/plc_program.st", "行": 40},
+      {"文件路径": "Data/plc_program.st", "行": 41},
+      {"文件路径": "Data/plc_program.st", "行": 42}
+    ],
+    "创建文件": [],
+    "删除文件": []
+  }
+}
+完成！PID控制已删除，保留了基本的电机启停功能。"
+
+【示例 5 - 分析请求】：
+用户: "你分析一下这个程序行不行"
+助手: "这个程序存在以下问题：
+1. 代码结构混乱：有重复声明
+2. 缺少积分防饱和保护
+3. 缺少输出限幅
+4. PID算法缺少时间步长dt
+建议重新编写，加入完整的安全保护机制。"
+
