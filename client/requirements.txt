@@ -1,0 +1,26 @@
+# UI Framework
+PyQt6>=6.6.0
+
+# Database
+SQLAlchemy>=2.0.0
+
+# Network
+httpx>=0.26.0
+websockets>=12.0
+
+# Image Processing
+Pillow>=10.2.0
+
+# PDF Processing
+PyMuPDF>=1.23.0
+
+# File Processing
+chardet>=5.2.0
+
+# Utilities
+pyyaml>=6.0.1
+loguru>=0.7.2
+
+# AI (Optional)
+openai>=1.0.0
+edge-tts>=6.1.0

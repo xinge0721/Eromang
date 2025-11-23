@@ -1,280 +1,207 @@
 # Eromang
 
-一个多功能媒体管理软件，集成了漫画阅读、视频播放和文档管理三大功能模块。
+一个多功能媒体管理软件，集成了漫画阅读、视频播放、文档管理和AI助手四大功能模块。
 
 ## 功能特性
 
-### 📚 漫画阅读器
-- 支持多种格式：CBZ, CBR, ZIP, RAR, PDF, 图片文件夹
+### 漫画阅读器
+- **本地支持**：CBZ, CBR, ZIP, RAR, PDF, 图片文件夹
+- **在线漫画源**：支持添加自定义漫画网站源
 - 单页/双页/连续阅读模式
 - 阅读进度自动保存
-- 书签功能
-- 高性能图像解码（C++实现）
+- 书签和收藏功能
 
-### 🎬 视频播放器
-- 支持主流视频格式：MP4, MKV, AVI, FLV, MOV等
+### 视频播放器
+- **本地支持**：MP4, MKV, AVI, FLV, MOV等
+- **在线视频源**：支持在线视频网站解析
 - 播放列表管理
 - 字幕支持
 - 断点续播
-- 倍速播放
 
-### 📄 文档管理
-- 支持格式：PDF, TXT, Markdown（可扩展）
+### 文档管理
+- **本地支持**：PDF, TXT, Markdown
+- **在线文档**：支持在线文档库
 - 标签分类系统
 - 全文搜索
-- 阅读进度跟踪
-- 注释和高亮功能
+- 云端同步（可选）
 
-### 🌐 网络功能
-- REST API接口
-- WebSocket实时通信
-- 远程控制支持
-- 多设备同步（预留）
+### AI助手（新增）
+- 语音唤醒："小爱同学"
+- 智能控制：语音控制各模块
+- 智能推荐：基于历史推荐
+- 对话功能：闲聊、问答
+
+### 网络功能
+- **REST API**：提供完整的HTTP API接口
+- **WebSocket**：实时双向通信
+- **远程控制**：通过网络控制应用
+- **多设备同步**：跨设备同步阅读进度和收藏
+- **在线资源管理**：统一管理在线漫画源、视频源
+
+## 项目架构
+
+### 核心设计：模块高内聚
+
+每个功能模块的所有代码集中在一个文件夹，出问题直接找对应模块。
+
+```
+Eromang/
+├── client/              # 客户端（桌面应用）
+│   ├── app/             # 应用入口
+│   │   ├── main.py      # 客户端主程序
+│   │   └── app.py       # 应用类
+│   │
+│   ├── modules/         # 功能模块
+│   │   ├── manga/       # 漫画模块
+│   │   ├── video/       # 视频模块
+│   │   ├── document/    # 文档模块
+│   │   ├── ai_assistant/# AI助手模块
+│   │   ├── settings/    # 设置模块
+│   │   └── auth/        # 登录注册模块
+│   │
+│   ├── core/            # 客户端核心
+│   │   ├── database/    # 本地数据库（缓存、配置）
+│   │   ├── cache/       # 本地缓存
+│   │   ├── api_client/  # 服务器API客户端
+│   │   │   ├── client.py          # HTTP客户端
+│   │   │   ├── websocket.py       # WebSocket客户端
+│   │   │   └── endpoints.py       # API端点定义
+│   │   ├── sources/     # 在线资源源解析器
+│   │   │   ├── manga/   # 漫画源解析器
+│   │   │   ├── video/   # 视频源解析器
+│   │   │   └── document/# 文档源解析器
+│   │   └── thread/      # 线程管理
+│   │
+│   ├── common/          # 通用组件
+│   │   ├── ui/          # UI组件
+│   │   ├── utils/       # 工具函数
+│   │   └── globals/     # 全局变量、事件总线
+│   │
+│   └── resources/       # 资源文件
+│       ├── images/      # 图片
+│       ├── styles/      # 样式
+│       └── fonts/       # 字体
+│
+├── server/              # 服务器（独立部署）
+│   ├── app/             # 服务器入口
+│   │   ├── main.py      # 服务器主程序
+│   │   └── config.py    # 服务器配置
+│   │
+│   ├── api/             # REST API
+│   │   ├── server.py    # FastAPI服务器
+│   │   ├── routes/      # API路由
+│   │   │   ├── auth.py        # 认证API
+│   │   │   ├── manga.py       # 漫画API
+│   │   │   ├── video.py       # 视频API
+│   │   │   ├── document.py    # 文档API
+│   │   │   ├── sync.py        # 同步API
+│   │   │   └── user.py        # 用户API
+│   │   ├── middleware/  # 中间件
+│   │   │   ├── auth.py        # 认证中间件
+│   │   │   ├── cors.py        # CORS中间件
+│   │   │   └── logging.py     # 日志中间件
+│   │   └── schemas.py   # 数据模型（Pydantic）
+│   │
+│   ├── websocket/       # WebSocket服务
+│   │   ├── server.py    # WS服务器
+│   │   ├── handlers.py  # 消息处理器
+│   │   └── events.py    # 事件定义
+│   │
+│   ├── services/        # 业务逻辑层
+│   │   ├── manga_service.py   # 漫画服务
+│   │   ├── video_service.py   # 视频服务
+│   │   ├── document_service.py# 文档服务
+│   │   ├── user_service.py    # 用户服务
+│   │   └── sync_service.py    # 同步服务
+│   │
+│   ├── database/        # 服务器数据库
+│   │   ├── connection.py      # 数据库连接
+│   │   ├── models/      # 数据模型
+│   │   │   ├── user.py        # 用户模型
+│   │   │   ├── manga.py       # 漫画模型
+│   │   │   ├── video.py       # 视频模型
+│   │   │   └── document.py    # 文档模型
+│   │   └── repository/  # 数据访问层
+│   │       ├── user_repo.py
+│   │       ├── manga_repo.py
+│   │       └── video_repo.py
+│   │
+│   ├── storage/         # 文件存储
+│   │   ├── local.py     # 本地存储
+│   │   ├── oss.py       # 对象存储（阿里云OSS/AWS S3）
+│   │   └── manager.py   # 存储管理器
+│   │
+│   ├── sources/         # 在线资源源（服务器端）
+│   │   ├── crawler/     # 爬虫引擎
+│   │   ├── manga/       # 漫画源
+│   │   └── video/       # 视频源
+│   │
+│   └── utils/           # 工具函数
+│       ├── auth.py      # 认证工具
+│       ├── cache.py     # 缓存工具
+│       └── logger.py    # 日志工具
+│
+├── shared/              # 客户端和服务器共享代码
+│   ├── models/          # 共享数据模型
+│   ├── constants/       # 共享常量
+│   └── utils/           # 共享工具函数
+│
+└── tests/               # 测试
+    ├── client/          # 客户端测试
+    └── server/          # 服务器测试
+```
 
 ## 技术栈
 
 - **UI框架**: PyQt6
-- **数据库**: SQLite + SQLAlchemy ORM
-- **性能优化**: C++ (pybind11绑定)
-- **网络**: FastAPI + WebSocket
-- **图像处理**: Pillow, OpenCV
-- **视频处理**: VLC/FFmpeg
-- **文档解析**: PyMuPDF, pdfplumber
+- **数据库**: SQLite + SQLAlchemy
+- **性能优化**: C++ (pybind11)
+- **网络通信**: FastAPI + WebSocket + httpx
+- **在线资源解析**: BeautifulSoup4 + lxml + requests
+- **AI引擎**: OpenAI API / Ollama, Whisper, edge-tts
 
-## 项目结构
+## 快速开始
 
-```
-Eromang/
-├── src/                      # 源代码
-│   ├── ui/                   # UI层（PyQt6）
-│   │   ├── main_window.py    # 主窗口
-│   │   ├── manga/            # 漫画模块UI
-│   │   ├── video/            # 视频模块UI
-│   │   └── document/         # 文档模块UI
-│   ├── services/             # 业务逻辑层
-│   ├── managers/             # 管理器层
-│   │   ├── config_manager.py # 配置管理
-│   │   ├── cache_manager.py  # 缓存管理
-│   │   └── thread_manager.py # 线程管理
-│   ├── core/                 # 核心层
-│   │   ├── parsers/          # 文件解析器
-│   │   ├── decoders/         # 解码器（C++）
-│   │   ├── indexer/          # 文件索引
-│   │   └── network/          # 网络模块
-│   ├── database/             # 数据层
-│   │   ├── models/           # ORM模型
-│   │   └── repository/       # 数据访问层
-│   ├── utils/                # 工具类
-│   └── constants/            # 常量定义
-├── resources/                # 资源文件
-├── tests/                    # 测试
-├── docs/                     # 文档
-├── requirements.txt          # Python依赖
-├── setup.py                  # 安装配置
-├── CMakeLists.txt           # C++构建配置
-└── README.md                # 项目说明
-```
-
-## 安装指南
-
-### 环境要求
-
-- Python 3.10+
-- C++ 编译器（MSVC 2019+）
-- CMake 3.15+
-- Git
-
-### 安装步骤
-
-1. **克隆项目**
 ```bash
-git clone https://github.com/yourusername/eromang.git
-cd eromang
-```
-
-2. **创建虚拟环境**
-```bash
-python -m venv venv
-venv\Scripts\activate  # Windows
-```
-
-3. **安装Python依赖**
-```bash
+# 安装依赖
 pip install -r requirements.txt
+
+# 运行应用
+python -m app.main
 ```
-
-4. **安装开发依赖（可选）**
-```bash
-pip install -r requirements-dev.txt
-```
-
-5. **构建C++扩展（可选，用于性能优化）**
-```bash
-# 安装pybind11
-pip install pybind11
-
-# 使用CMake构建
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
-cd ..
-
-# 或使用setup.py构建
-python setup.py build_ext --inplace
-```
-
-6. **运行应用**
-```bash
-python -m src.main
-```
-
-## 开发指南
-
-### 开发环境设置
-
-```bash
-# 安装开发依赖
-pip install -r requirements-dev.txt
-
-# 运行测试
-pytest
-
-# 代码格式化
-black src/
-isort src/
-
-# 代码检查
-flake8 src/
-mypy src/
-```
-
-### 项目架构
-
-项目采用分层架构设计：
-
-1. **表示层（UI Layer）**: PyQt6界面，负责用户交互
-2. **应用层（Application Layer）**: 业务逻辑和服务管理
-3. **核心层（Core Layer）**: 文件解析、解码、索引等核心功能
-4. **数据层（Data Layer）**: 数据库访问和文件系统操作
-
-### 配置文件
-
-应用配置文件位于 `~/.eromang/config.yaml`，首次运行时自动创建。
-
-主要配置项：
-- 主题设置
-- 模块启用/禁用
-- 网络设置
-- 缓存设置
-- 性能优化选项
-
-## 使用说明
-
-### 首次使用
-
-1. 启动应用后，点击"文件" -> "导入媒体库"
-2. 选择包含媒体文件的文件夹
-3. 应用会自动扫描并索引文件
-4. 在左侧导航栏切换不同模块
-
-### 漫画阅读
-
-1. 在漫画模块中选择要阅读的漫画
-2. 使用方向键或鼠标滚轮翻页
-3. 右键菜单可调整阅读模式和缩放
-4. 阅读进度自动保存
-
-### 视频播放
-
-1. 在视频模块中选择视频
-2. 支持常用播放控制（播放/暂停/快进/快退）
-3. 可创建播放列表
-4. 支持字幕加载
-
-### 文档管理
-
-1. 在文档模块中浏览文档
-2. 使用搜索功能快速查找
-3. 可添加标签进行分类
-4. 支持添加注释和高亮
 
 ## 开发路线图
 
-### Phase 1: 基础框架 ✅
-- [x] 项目结构搭建
-- [x] 数据库模型设计
-- [x] 主窗口和导航
-- [x] 配置管理系统
+### Phase 1: 基础框架重构
+- [ ] 重新组织目录结构
+- [ ] 实现事件总线
+- [ ] 实现线程管理
+- [ ] 实现网络通信基础（HTTP客户端）
 
-### Phase 2: 文档模块（优先）
-- [ ] TXT解析器
-- [ ] PDF解析器
-- [ ] 文档查看器UI
-- [ ] 搜索和标签功能
+### Phase 2: 核心模块实现
+- [ ] 文档模块（本地）
+- [ ] 漫画模块（本地）
+- [ ] 视频模块（本地）
 
-### Phase 3: 漫画模块
-- [ ] C++图像解码器
-- [ ] 压缩包解析
-- [ ] 漫画阅读器UI
-- [ ] 阅读进度管理
+### Phase 3: 网络功能
+- [ ] REST API服务器
+- [ ] WebSocket实时通信
+- [ ] 在线漫画源解析器
+- [ ] 在线视频源解析器
+- [ ] 远程控制功能
 
-### Phase 4: 视频模块
-- [ ] 视频解码集成
-- [ ] 播放器UI
-- [ ] 播放列表
-- [ ] 字幕支持
+### Phase 4: AI助手
+- [ ] 语音识别（STT）
+- [ ] 语音合成（TTS）
+- [ ] 基础对话功能
+- [ ] 智能控制集成
 
 ### Phase 5: 高级功能
-- [ ] 多线程优化
-- [ ] 网络API
-- [ ] 远程控制
-- [ ] 缓存优化
-
-### Phase 6: 扩展功能（预留）
+- [ ] 多设备同步
+- [ ] 云端备份
 - [ ] 插件系统
-- [ ] 更多格式支持
-- [ ] 云同步
-- [ ] 移动端适配
-
-## 贡献指南
-
-欢迎贡献代码！请遵循以下步骤：
-
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-### 代码规范
-
-- 遵循 PEP 8 Python代码规范
-- 使用 Black 进行代码格式化
-- 添加适当的注释和文档字符串
-- 编写单元测试
+- [ ] 自定义资源源
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
-
-## 致谢
-
-- PyQt6 - 强大的Python GUI框架
-- SQLAlchemy - 优秀的Python ORM
-- FastAPI - 现代化的Web框架
-- 所有开源贡献者
-
-## 联系方式
-
-- 项目主页: https://github.com/yourusername/eromang
-- 问题反馈: https://github.com/yourusername/eromang/issues
-
-## 更新日志
-
-### v0.1.0 (2025-11-19)
-- 初始版本
-- 完成基础架构搭建
-- 实现主窗口框架
-- 数据库模型设计
-- 配置管理系统
+MIT License
