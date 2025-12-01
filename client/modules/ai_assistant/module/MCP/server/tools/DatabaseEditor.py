@@ -16,6 +16,11 @@ class DatabaseEditor:
         """
         内部辅助方法：获取数据库引擎和表对象
         SQLAlchemy 会自动验证和转义表名，防止 SQL 注入
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 数据库引擎和表对象
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         engine = create_engine(f'sqlite:///{db_name}', echo=False)
         metadata = MetaData()
@@ -41,6 +46,9 @@ class DatabaseEditor:
     def connect(db_name: str) -> tuple[bool, str]:
         """
         若数据库已存在，提前返回。否则创建数据库文件。
+        :param db_name: 数据库名称
+        :return: 是否成功
+        :error: 数据库名称不能为空
         """
         if not db_name:
             return False, "数据库名称不能为空"
@@ -66,7 +74,11 @@ class DatabaseEditor:
     # ================ 删除数据库 ================
     @staticmethod
     def delete(db_name: str) -> tuple[bool, str]:
-        """删除数据库文件"""
+        """删除数据库文件
+        :param db_name: 数据库名称
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        """
         if not db_name:
             return False, "数据库名称不能为空"
 
@@ -84,6 +96,14 @@ class DatabaseEditor:
     def insert_data(db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
         """
         插入数据到指定表，如果ID已存在则失败
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :param content: 内容
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if not all([db_name, table_name, data_id]):
             return False, "数据库名称、表名和数据ID不能为空"
@@ -118,6 +138,14 @@ class DatabaseEditor:
     def update_data(db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
         """
         更新指定ID的数据内容
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :param content: 内容
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if not all([db_name, table_name, data_id]):
             return False, "数据库名称、表名和数据ID不能为空"
@@ -156,6 +184,13 @@ class DatabaseEditor:
     def delete_data(db_name: str, table_name: str, data_id: str) -> tuple[bool, str]:
         """
         删除指定ID的数据
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if not all([db_name, table_name, data_id]):
             return False, "数据库名称、表名和数据ID不能为空"
@@ -194,6 +229,11 @@ class DatabaseEditor:
     def create_table(db_name: str, table_name: str) -> tuple[bool, str]:
         """
         在指定数据库中创建数据表
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         if not all([db_name, table_name]):
             return False, "数据库名称和表名不能为空"
@@ -224,6 +264,11 @@ class DatabaseEditor:
     def delete_table(db_name: str, table_name: str) -> tuple[bool, str]:
         """
         删除指定数据库中的数据表
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         if not all([db_name, table_name]):
             return False, "数据库名称和表名不能为空"
@@ -254,6 +299,14 @@ class DatabaseEditor:
     def write(db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
         """
         写入数据到数据库，如果ID已存在则更新内容（UPSERT操作）
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :param content: 内容
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if not all([db_name, table_name, data_id]):
             return False, "数据库名称、表名和数据ID不能为空"
@@ -295,7 +348,13 @@ class DatabaseEditor:
     def read(db_name: str, table_name: str, data_id: str) -> tuple[bool, str]:
         """
         从指定表中读取数据
-        返回 (成功标志, 内容或错误消息)
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :return: 是否成功
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if not all([db_name, table_name, data_id]):
             return False, "数据库名称、表名和数据ID不能为空"
@@ -334,7 +393,9 @@ class DatabaseEditor:
     def list_tables(db_name: str) -> tuple[bool, list]:
         """
         列出数据库中的所有表
-        返回 (成功标志, 表名列表或错误消息)
+        :param db_name: 数据库名称
+        :return: 表名列表
+        :error: 数据库名称不能为空
         """
         if not db_name:
             return False, []
@@ -356,7 +417,11 @@ class DatabaseEditor:
     def list_all_data(db_name: str, table_name: str) -> tuple[bool, list]:
         """
         列出表中的所有数据
-        返回 (成功标志, 数据列表) - 每条数据格式为 {'id': xxx, 'content': xxx}
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 数据列表
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         if not all([db_name, table_name]):
             return False, []
@@ -387,7 +452,11 @@ class DatabaseEditor:
     def count_records(db_name: str, table_name: str) -> tuple[bool, int]:
         """
         获取表中的记录数
-        返回 (成功标志, 记录数)
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 记录数
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         if not all([db_name, table_name]):
             return False, 0
@@ -417,7 +486,13 @@ class DatabaseEditor:
     def data_exists(db_name: str, table_name: str, data_id: str) -> tuple[bool, bool]:
         """
         检查数据是否存在
-        返回 (操作成功标志, 数据存在标志)
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :return: 是否存在
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if not all([db_name, table_name, data_id]):
             return False, False

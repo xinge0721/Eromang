@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from .log import logger
+from tools import logger
 
 
 class FileEditor:
@@ -9,7 +9,15 @@ class FileEditor:
     # ================ 读取行 ================
     @staticmethod
     def read_line(filepath, line_num,_encoding='utf-8'):
-        # 如果文件不存在，无法读取
+        """
+        读取指定行内容
+        :param filepath: 文件路径
+        :param line_num: 行号
+        :param _encoding: 文件编码
+        :return: 指定行内容
+        :error: 文件不存在
+        """
+        # 
         if not os.path.exists(filepath):
             return False
         with open(filepath, 'r', encoding=_encoding) as f:
@@ -21,7 +29,13 @@ class FileEditor:
     # ================ 读取所有行 ================
     @staticmethod
     def read_all(filepath,_encoding='utf-8'):
-        # 如果文件不存在，无法读取
+        """
+        读取所有行内容
+        :param filepath: 文件路径
+        :param _encoding: 文件编码
+        :return: 所有行内容
+        :error: 文件不存在
+        """
         if not os.path.exists(filepath):
             return False
         # 读取文件
@@ -31,7 +45,15 @@ class FileEditor:
     # ================ 更新行 ================
     @staticmethod
     def update_line(filepath, line_num, content,_encoding='utf-8'):
-        # 如果文件不存在，无法更新
+        """
+        更新指定行内容
+        :param filepath: 文件路径
+        :param line_num: 行号
+        :param content: 内容
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
         if not os.path.exists(filepath):
             return False
         # 读取文件
@@ -48,7 +70,14 @@ class FileEditor:
     # ================ 删除行 ================
     @staticmethod
     def delete_line(filepath, line_num,_encoding='utf-8'):
-        # 如果文件不存在，无法删除
+        """
+        删除指定行内容
+        :param filepath: 文件路径
+        :param line_num: 行号
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
         if not os.path.exists(filepath):
             return False
         # 读取文件
@@ -65,7 +94,15 @@ class FileEditor:
     # ================ 插入行 ================
     @staticmethod
     def insert_line(filepath, line_num, content,_encoding='utf-8'):
-        # 如果文件不存在，返回错误（确保不创建意料之外的文件）
+        """
+        插入指定行内容
+        :param filepath: 文件路径
+        :param line_num: 行号
+        :param content: 内容
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
         if not os.path.exists(filepath):
             return False
 
@@ -84,7 +121,14 @@ class FileEditor:
     # ================ 追加行 ================
     @staticmethod
     def append_line(filepath, content,_encoding='utf-8'):
-        # 如果文件不存在，无法追加
+        """
+        追加行内容
+        :param filepath: 文件路径
+        :param content: 内容
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
         if not os.path.exists(filepath):
             return False
         # 追加行
@@ -94,7 +138,13 @@ class FileEditor:
     # ================ 清空文件 ================
     @staticmethod
     def clear_file(filepath,_encoding='utf-8'):
-        """清空文本文件内容"""
+        """
+        清空文本文件内容
+        :param filepath: 文件路径
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
         # 如果文件不存在，无法清空
         if not os.path.exists(filepath):
             return False
@@ -107,7 +157,13 @@ class FileEditor:
     #  -------------- 读取JSON文件 --------------
     @staticmethod
     def read_JSON(filepath,_encoding='utf-8'):
-        """读取JSON文件"""
+        """
+        读取JSON文件
+        :param filepath: 文件路径
+        :param _encoding: 文件编码
+        :return: JSON数据
+        :error: 文件不存在
+        """
         # 如果文件不存在，无法读取
         if not os.path.exists(filepath):
             return None
@@ -123,7 +179,14 @@ class FileEditor:
     #  -------------- 写入JSON文件 --------------
     @staticmethod
     def write_JSON(filepath, data, _encoding='utf-8'):
-        """写入JSON文件（覆盖）"""
+        """
+        写入JSON文件（覆盖）
+        :param filepath: 文件路径
+        :param data: JSON数据
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
         try:
             # 确保目录存在
             os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
@@ -151,6 +214,7 @@ class FileEditor:
         :param append_data: 要追加的字典元素（如对话消息：{"role": "user", "content": "内容"}）
         :param _encoding: 文件编码
         :return: 返回追加后的历史列表，或None（出错）
+        :error: 文件不存在
         """
         # 步骤1：检查文件是否存在
         if not os.path.exists(filepath):

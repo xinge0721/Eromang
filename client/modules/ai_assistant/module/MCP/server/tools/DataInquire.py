@@ -10,6 +10,9 @@ class inquire:
     def file_directory(file_path: str):
         """
         查询文件目录
+        :param file_path: 文件路径
+        :return: 文件目录
+        :error: 文件路径不能为空
         """
         if file_path is None or file_path == "":
             return None
@@ -23,6 +26,9 @@ class inquire:
     def file_content(file_path: str):
         """
         查询文件内容
+        :param file_path: 文件路径
+        :return: 文件内容
+        :error: 文件路径不能为空
         """
         if file_path is None or file_path == "":
             return None
@@ -35,6 +41,9 @@ class inquire:
     def file_line_count(file_path: str):
         """
         查询文件行数
+        :param file_path: 文件路径
+        :return: 文件行数
+        :error: 文件路径不能为空
         """
         if file_path is None or file_path == "":
             return None
@@ -49,6 +58,10 @@ class inquire:
     def file_content_fuzzy(file_path: str, content: str):
         """
         模糊查询文件内容
+        :param file_path: 文件路径
+        :param content: 查询内容
+        :return: 文件内容
+        :error: 文件路径不能为空
         """
         if file_path is None or file_path == "":
             return None
@@ -75,6 +88,9 @@ class inquire:
     def database_all_table(db_name: str):
         """
         查询数据库所有数据表
+        :param db_name: 数据库名称
+        :return: 数据表列表
+        :error: 数据库名称不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"
@@ -100,6 +116,11 @@ class inquire:
     def database_table_content(db_name: str, table_name: str):
         """
         查询数据表所有数据
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 数据表数据
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"
@@ -135,6 +156,13 @@ class inquire:
     def database_table_data_exists(db_name: str, table_name: str, data_id: str):
         """
         检查数据在表中是否存在
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_id: 数据ID
+        :return: 是否存在
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"
@@ -171,6 +199,11 @@ class inquire:
     def database_content_fuzzy(db_name: str, content: str):
         """
         模糊查询数据库内容（在所有表中搜索）
+        :param db_name: 数据库名称
+        :param content: 查询内容
+        :return: 查询结果
+        :error: 数据库名称不能为空
+        :error: 查询内容不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"
@@ -209,6 +242,11 @@ class inquire:
     def database_table_data_count(db_name: str, table_name: str):
         """
         统计数据表数据数量
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :return: 数据数量
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"
@@ -244,6 +282,13 @@ class inquire:
     def database_table_data_batch(db_name: str, table_name: str, data_ids: list):
         """
         批量查询数据表数据
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param data_ids: 数据ID列表
+        :return: 查询结果
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 数据ID列表不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"
@@ -283,6 +328,13 @@ class inquire:
     def database_table_data_filter(db_name: str, table_name: str, content: str):
         """
         按条件筛选数据表数据（在指定表中模糊搜索）
+        :param db_name: 数据库名称
+        :param table_name: 数据表名称
+        :param content: 查询内容
+        :return: 查询结果
+        :error: 数据库名称不能为空
+        :error: 表名不能为空
+        :error: 查询内容不能为空
         """
         if db_name is None or db_name == "":
             return "数据库名称不能为空"

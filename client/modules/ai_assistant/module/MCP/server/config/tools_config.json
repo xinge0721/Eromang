@@ -1,0 +1,26 @@
+{
+  "server_name": "MCP工具服务器",
+  "tools": [
+    {
+      "enabled": true,
+      "module": "module.MCP.server.tools.FileEditor",
+      "class": "FileEditor",
+      "methods": "all",
+      "description": "文件编辑工具"
+    },
+    {
+      "enabled": true,
+      "module": "module.MCP.server.tools.DatabaseEditor",
+      "class": "DatabaseEditor",
+      "methods": "all",
+      "description": "数据库编辑工具"
+    },
+    {
+      "enabled": true,
+      "module": "module.MCP.server.tools.DataInquire",
+      "class": "inquire",
+      "methods": "all",
+      "description": "数据查询工具"
+    }
+  ]
+}
