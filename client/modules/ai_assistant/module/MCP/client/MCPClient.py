@@ -15,8 +15,10 @@ class MCPClient:
         self.pause_lock = threading.Lock()#暂停锁
 
         # 获取当前文件所在目录
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        server_path = os.path.join(current_dir, "server.py")
+        # 获取当前文件所在目录的父目录（MCP目录）
+        current_dir = os.path.dirname(os.path.abspath(__file__))  # client目录
+        parent_dir = os.path.dirname(current_dir)  # MCP目录
+        server_path = os.path.join(parent_dir, "server", "MCPServer.py")
 
         self.server_params = StdioServerParameters(
             command="python",
@@ -194,6 +196,9 @@ class MCPClient:
             raise ValueError("工具列表为空")
         return self.tools
 
+    def get_initialized(self) -> bool:
+        return self.initialized
+
 # ==================== 测试代码 ====================
 if __name__ == "__main__":
     print("=" * 80)
@@ -207,7 +212,8 @@ if __name__ == "__main__":
         # 启动客户端
         print("\n[1] 启动客户端...")
         client.start()
-        time.sleep(5)  # 等待初始化完成
+        while not client.get_initialized():
+            time.sleep(0.1)
         print("✓ 客户端启动成功")
 
         # 获取工具列表
