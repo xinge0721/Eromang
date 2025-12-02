@@ -24,9 +24,9 @@ import os
 import json
 from typing import Optional, Dict, Any, Generator
 
-from ..serve import OPEN_AI
-from ..models import DeepSeek, Doubao, Kimi, Qwen
-from ..tools.log import logger
+from .Tool import OPEN_AI
+from .Model import DeepSeek, Doubao, Kimi, Qwen
+from tools import logger
 class AIFactory:
     """
     AI工厂类 - 管理双AI协同系统

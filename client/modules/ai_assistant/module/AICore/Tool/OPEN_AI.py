@@ -2,7 +2,7 @@ from openai import OpenAI
 from typing import Callable
 import json
 import os
-from Tools import HistoryManager
+from HistoryManager import HistoryManager
 
 # OPEN_AI 类
 class OPEN_AI:

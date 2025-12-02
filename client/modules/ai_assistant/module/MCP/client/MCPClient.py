@@ -511,19 +511,28 @@ if __name__ == "__main__":
         print("=" * 80)
 
         # 删除数据库
-        print("\n[21] 删除测试数据库...")
+        print("\n[24] 删除测试数据库...")
         task_id = client.add({"name": "delete", "arguments": {"db_name": test_db}})
         result = client.get_result(task_id, timeout=5)
         print(f"✓ {result}")
 
-        # 删除测试文件
-        print("\n[22] 删除测试文件...")
+        # 删除基础测试文件
+        print("\n[25] 删除基础测试文件...")
         if os.path.exists(test_file):
             os.remove(test_file)
             print(f"✓ 已删除: {test_file}")
         if os.path.exists(test_json):
             os.remove(test_json)
             print(f"✓ 已删除: {test_json}")
+
+        # 删除多路径测试文件
+        print("\n[26] 删除多路径测试文件...")
+        for file_path in created_files:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"✓ 已删除: {file_path}")
+
+        print(f"\n✓ 清理完成，共删除 {len(created_files) + 2} 个测试文件")
 
     except Exception as e:
         print(f"\n✗ 测试过程中出现错误: {e}")
@@ -532,7 +541,7 @@ if __name__ == "__main__":
 
     finally:
         # 关闭客户端
-        print("\n[23] 关闭客户端...")
+        print("\n[27] 关闭客户端...")
         client.close()
         print("✓ 客户端已关闭")
 
