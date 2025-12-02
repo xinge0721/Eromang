@@ -23,7 +23,7 @@ class AllEventsHandler(FileSystemEventHandler):
             recursive: 是否递归监控子目录
         """
         if self.is_running:
-            print("⚠️ 监控已在运行中")
+            print(" 监控已在运行中")
             return
         
         # 检查路径是否存在
@@ -41,7 +41,7 @@ class AllEventsHandler(FileSystemEventHandler):
     def stop_monitoring(self):
         """停止监控"""
         if not self.is_running or not self.observer:
-            print("⚠️ 监控未运行")
+            print(" 监控未运行")
             return
         
         self.observer.stop()
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     try:
         # 启动监控
         monitor.start_monitoring(watch_path, recursive=True)
-        print("📝 记录: 内存队列")
+        print(" 记录: 内存队列")
         print("按 Ctrl+C 停止\n")
         
         # 循环获取事件
@@ -107,17 +107,17 @@ if __name__ == "__main__":
             time.sleep(5)  # 每5秒检查一次
             events = monitor.get_events()
             if events:
-                print(f"\n📋 获取到 {len(events)} 个事件:")
+                print(f"\n 获取到 {len(events)} 个事件:")
                 for event in events:
                     print(f"  - [{event['timestamp']}] {event['event_type']}: {event['src_path']}")
     
     except FileNotFoundError as e:
-        print(f"❌ 错误: {e}")
+        print(f" 错误: {e}")
         print(f"   当前目录: {Path.cwd()}")
         print(f"   绝对路径: {Path(watch_path).absolute()}")
     
     except KeyboardInterrupt:
-        print("\n⏹️ 正在停止...")
+        print("\n⏹正在停止...")
     
     finally:
         monitor.stop_monitoring()

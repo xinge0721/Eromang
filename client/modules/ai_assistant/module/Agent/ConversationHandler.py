@@ -23,7 +23,7 @@
 import json
 from typing import Callable, Dict, Any, Optional
 
-from ..tools.log import logger
+from tools.log import logger
 from ._Search import _Search
 from ._Dialogue import _Dialogue
 
