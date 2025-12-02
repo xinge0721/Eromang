@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import sys
+
+# 添加上层目录到路径，以便导入 tools 模块
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../')))
 from tools import logger
 
 
 class FileEditor:
 
     # ================ 读取行 ================
-    @staticmethod
-    def read_line(filepath, line_num,_encoding='utf-8'):
+    def read_line(self, filepath, line_num,_encoding='utf-8'):
         """
         读取指定行内容
         :param filepath: 文件路径
@@ -27,8 +30,7 @@ class FileEditor:
             return None
 
     # ================ 读取所有行 ================
-    @staticmethod
-    def read_all(filepath,_encoding='utf-8'):
+    def read_all(self, filepath,_encoding='utf-8'):
         """
         读取所有行内容
         :param filepath: 文件路径
@@ -43,8 +45,7 @@ class FileEditor:
             return [line.rstrip('\n') for line in f.readlines()]
 
     # ================ 更新行 ================
-    @staticmethod
-    def update_line(filepath, line_num, content,_encoding='utf-8'):
+    def update_line(self, filepath, line_num, content,_encoding='utf-8'):
         """
         更新指定行内容
         :param filepath: 文件路径
@@ -68,8 +69,7 @@ class FileEditor:
         return False
 
     # ================ 删除行 ================
-    @staticmethod
-    def delete_line(filepath, line_num,_encoding='utf-8'):
+    def delete_line(self, filepath, line_num,_encoding='utf-8'):
         """
         删除指定行内容
         :param filepath: 文件路径
@@ -92,8 +92,7 @@ class FileEditor:
         return False
 
     # ================ 插入行 ================
-    @staticmethod
-    def insert_line(filepath, line_num, content,_encoding='utf-8'):
+    def insert_line(self, filepath, line_num, content,_encoding='utf-8'):
         """
         插入指定行内容
         :param filepath: 文件路径
@@ -119,8 +118,7 @@ class FileEditor:
         return False
 
     # ================ 追加行 ================
-    @staticmethod
-    def append_line(filepath, content,_encoding='utf-8'):
+    def append_line(self, filepath, content,_encoding='utf-8'):
         """
         追加行内容
         :param filepath: 文件路径
@@ -136,8 +134,7 @@ class FileEditor:
             f.write(content + '\n')
 
     # ================ 清空文件 ================
-    @staticmethod
-    def clear_file(filepath,_encoding='utf-8'):
+    def clear_file(self, filepath,_encoding='utf-8'):
         """
         清空文本文件内容
         :param filepath: 文件路径
@@ -155,8 +152,7 @@ class FileEditor:
 
     # ================ JSON文件操作 ================
     #  -------------- 读取JSON文件 --------------
-    @staticmethod
-    def read_JSON(filepath,_encoding='utf-8'):
+    def read_JSON(self, filepath,_encoding='utf-8'):
         """
         读取JSON文件
         :param filepath: 文件路径
@@ -177,8 +173,7 @@ class FileEditor:
 
     
     #  -------------- 写入JSON文件 --------------
-    @staticmethod
-    def write_JSON(filepath, data, _encoding='utf-8'):
+    def write_JSON(self, filepath, data, _encoding='utf-8'):
         """
         写入JSON文件（覆盖）
         :param filepath: 文件路径
@@ -200,8 +195,7 @@ class FileEditor:
             return False
              
     #  -------------- 追加数据(历史记录)-JSON文件 --------------
-    @staticmethod
-    def append_JSON(filepath,append_data:dict, _encoding='utf-8'):
+    def append_JSON(self, filepath,append_data:dict, _encoding='utf-8'):
         """
         追加数据到JSON文件。
         数据格式为对话历史列表，如：

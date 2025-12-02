@@ -1,9 +1,9 @@
 from .FileEditor import FileEditor
 from .DatabaseEditor import DatabaseEditor
-from .DataInquire import inquire
+from .DataInquire import DataInquire
 
 __all__ = [
     'FileEditor',
     'DatabaseEditor',
-    'inquire',
+    'DataInquire',
 ]

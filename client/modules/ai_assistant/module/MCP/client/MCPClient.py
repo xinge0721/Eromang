@@ -202,11 +202,15 @@ class MCPClient:
 # ==================== 测试代码 ====================
 if __name__ == "__main__":
     print("=" * 80)
-    print("MCP 客户端测试")
+    print("MCP 客户端综合测试")
     print("=" * 80)
 
     # 创建客户端
     client = MCPClient()
+    test_db = "test_mcp.db"
+    test_table = "users"
+    test_file = "test_file.txt"
+    test_json = "test_data.json"
 
     try:
         # 启动客户端
@@ -219,71 +223,307 @@ if __name__ == "__main__":
         # 获取工具列表
         print("\n[2] 获取工具列表...")
         tools = client.list_tools()
-        print(f"✓ 找到 {len(tools)} 个工具:")
-        for i, tool in enumerate(tools, 1):
-            if hasattr(tool, 'name'):
-                print(f"  {i}. {tool.name}: {tool.description if hasattr(tool, 'description') else ''}")
-            else:
-                print(f"  {i}. {tool.get('name', 'unknown')}: {tool.get('description', '')}")
+        print(f"✓ 找到 {len(tools)} 个工具")
 
-        # 测试单个任务
-        print("\n[3] 测试单个任务 (add)...")
-        task_id = client.add({
-            "name": "add",
-            "arguments": {"a": 10, "b": 20}
-        })
-        print(f"✓ 任务已添加，UUID: {task_id}")
+        # ==================== 数据库工具测试 ====================
+        print("\n" + "=" * 80)
+        print("数据库工具测试")
+        print("=" * 80)
 
-        print("  等待结果...")
-        try:
-            result = client.get_result(task_id, timeout=5)
-            print(f"✓ 获取结果成功: {result}")
-        except TimeoutError as e:
-            print(f"✗ 超时: {e}")
-        except Exception as e:
-            print(f"✗ 错误: {e}")
+        # 创建数据库和表
+        print("\n[3] 创建数据库...")
+        task_id = client.add({"name": "connect", "arguments": {"db_name": test_db}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ {result}")
 
-        # 测试多个任务
-        print("\n[4] 测试多个任务 (add)...")
-        task_ids = []
-        for i in range(3):
+        print("\n[4] 创建数据表...")
+        task_id = client.add({"name": "create_table", "arguments": {"db_name": test_db, "table_name": test_table}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ {result}")
+
+        # 插入测试数据
+        print("\n[5] 插入测试数据...")
+        test_users = [
+            ("001", "张三 - 软件工程师"),
+            ("002", "李四 - 产品经理"),
+            ("003", "王五 - 设计师")
+        ]
+        for uid, info in test_users:
             task_id = client.add({
-                "name": "add",
-                "arguments": {"a": i, "b": i + 1}
+                "name": "write",
+                "arguments": {"db_name": test_db, "table_name": test_table, "data_id": uid, "content": info}
+            })
+            result = client.get_result(task_id, timeout=5)
+            print(f"  {uid}: {result}")
+
+        # 查询数据
+        print("\n[6] 查询数据...")
+        task_id = client.add({
+            "name": "read",
+            "arguments": {"db_name": test_db, "table_name": test_table, "data_id": "001"}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 读取结果: {result}")
+
+        # 统计记录
+        print("\n[7] 统计记录数...")
+        task_id = client.add({
+            "name": "count_records",
+            "arguments": {"db_name": test_db, "table_name": test_table}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 记录数: {result}")
+
+        # ==================== 文件编辑工具测试 ====================
+        print("\n" + "=" * 80)
+        print("文件编辑工具测试")
+        print("=" * 80)
+
+        # 创建测试文件
+        print("\n[8] 创建测试文件...")
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write("第一行内容\n第二行内容\n第三行内容\n")
+        print(f"✓ 测试文件已创建: {test_file}")
+
+        # 读取所有行
+        print("\n[9] 读取所有行...")
+        task_id = client.add({"name": "read_all", "arguments": {"filepath": test_file}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 文件内容: {result}")
+
+        # 读取指定行
+        print("\n[10] 读取第2行...")
+        task_id = client.add({"name": "read_line", "arguments": {"filepath": test_file, "line_num": 2}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 第2行: {result}")
+
+        # 更新行
+        print("\n[11] 更新第2行...")
+        task_id = client.add({
+            "name": "update_line",
+            "arguments": {"filepath": test_file, "line_num": 2, "content": "第二行已更新"}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 更新结果: {result}")
+
+        # 追加行
+        print("\n[12] 追加新行...")
+        task_id = client.add({
+            "name": "append_line",
+            "arguments": {"filepath": test_file, "content": "第四行新增内容"}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 追加结果: {result}")
+
+        # 插入行
+        print("\n[13] 在第1行插入...")
+        task_id = client.add({
+            "name": "insert_line",
+            "arguments": {"filepath": test_file, "line_num": 1, "content": "这是插入的第一行"}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 插入结果: {result}")
+
+        # ==================== JSON文件操作测试 ====================
+        print("\n" + "=" * 80)
+        print("JSON文件操作测试")
+        print("=" * 80)
+
+        # 写入JSON
+        print("\n[14] 写入JSON文件...")
+        json_data = {"name": "测试项目", "version": "1.0.0", "author": "测试用户"}
+        task_id = client.add({
+            "name": "write_JSON",
+            "arguments": {"filepath": test_json, "data": json_data}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 写入结果: {result}")
+
+        # 读取JSON
+        print("\n[15] 读取JSON文件...")
+        task_id = client.add({"name": "read_JSON", "arguments": {"filepath": test_json}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ JSON内容: {result}")
+
+        # ==================== 数据查询工具测试 ====================
+        print("\n" + "=" * 80)
+        print("数据查询工具测试")
+        print("=" * 80)
+
+        # 查询文件行数
+        print("\n[16] 查询文件行数...")
+        task_id = client.add({"name": "file_line_count", "arguments": {"file_path": test_file}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 文件行数: {result}")
+
+        # 查询文件内容
+        print("\n[17] 查询文件内容...")
+        task_id = client.add({"name": "file_content", "arguments": {"file_path": test_file}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 文件内容: {result}")
+
+        # 查询数据库所有表
+        print("\n[18] 查询数据库所有表...")
+        task_id = client.add({"name": "database_all_table", "arguments": {"db_name": test_db}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 数据库表: {result}")
+
+        # 查询表内容
+        print("\n[19] 查询表内容...")
+        task_id = client.add({
+            "name": "database_table_content",
+            "arguments": {"db_name": test_db, "table_name": test_table}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 表内容: {result}")
+
+        # 检查数据是否存在
+        print("\n[20] 检查数据是否存在...")
+        task_id = client.add({
+            "name": "database_table_data_exists",
+            "arguments": {"db_name": test_db, "table_name": test_table, "data_id": "001"}
+        })
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ 数据存在: {result}")
+
+        # ==================== 批量任务压力测试 ====================
+        print("\n" + "=" * 80)
+        print("批量任务压力测试")
+        print("=" * 80)
+
+        print("\n[21] 批量添加50个任务...")
+        task_ids = []
+        start_time = time.time()
+
+        for i in range(50):
+            task_id = client.add({
+                "name": "write",
+                "arguments": {
+                    "db_name": test_db,
+                    "table_name": test_table,
+                    "data_id": f"batch_{i:03d}",
+                    "content": f"批量测试数据 {i}"
+                }
             })
             task_ids.append(task_id)
-            print(f"  任务 {i+1} 已添加 (计算 {i} + {i+1})，UUID: {task_id}")
 
-        print("\n  获取所有结果...")
+        print(f"✓ 已添加 {len(task_ids)} 个任务")
+
+        print("\n[22] 等待所有任务完成...")
+        success_count = 0
+        fail_count = 0
+
         for i, task_id in enumerate(task_ids):
             try:
-                result = client.get_result(task_id, timeout=5)
-                print(f"  ✓ 任务 {i+1} 结果: {result}")
-            except TimeoutError:
-                print(f"  ✗ 任务 {i+1} 超时")
+                result = client.get_result(task_id, timeout=10)
+                success_count += 1
+                if i % 10 == 0:
+                    print(f"  进度: {i+1}/{len(task_ids)}")
             except Exception as e:
-                print(f"  ✗ 任务 {i+1} 错误: {e}")
+                fail_count += 1
+                print(f"  任务 {i} 失败: {e}")
 
-        # 测试非阻塞获取
-        print("\n[5] 测试非阻塞获取 (add)...")
-        task_id = client.add({
-            "name": "add",
-            "arguments": {"a": 100, "b": 200}
-        })
-        print(f"✓ 任务已添加 (计算 100 + 200)，UUID: {task_id}")
+        end_time = time.time()
+        elapsed = end_time - start_time
 
-        try:
-            result = client.get_result(task_id, block=False)
-            print(f"✓ 立即获取到结果: {result}")
-        except KeyError:
-            print("  结果尚未准备好（符合预期）")
-            print("  等待 1 秒后重试...")
-            time.sleep(1)
-            try:
-                result = client.get_result(task_id, block=False)
-                print(f"✓ 获取到结果: {result}")
-            except KeyError:
-                print("  结果仍未准备好")
+        print(f"\n✓ 压力测试完成:")
+        print(f"  总任务数: {len(task_ids)}")
+        print(f"  成功: {success_count}")
+        print(f"  失败: {fail_count}")
+        print(f"  总耗时: {elapsed:.2f} 秒")
+        print(f"  平均每任务: {elapsed/len(task_ids):.3f} 秒")
+
+        # ==================== 多路径文件操作测试 ====================
+        print("\n" + "=" * 80)
+        print("多路径文件操作测试")
+        print("=" * 80)
+
+        # 定义测试路径
+        test_paths = [
+            r"C:\Users\xinge\Desktop\Eromang\client\modules\ai_assistant\Data",
+            r"C:\Users\xinge\Desktop\Eromang\client\modules\ai_assistant\module\MCP\client"
+        ]
+
+        created_files = []
+
+        print("\n[23] 在不同路径下创建和操作文件...")
+        for i, path in enumerate(test_paths, 1):
+            test_file_path = os.path.join(path, f"test_file_{i}.txt")
+            test_json_path = os.path.join(path, f"test_data_{i}.json")
+
+            print(f"\n  路径 {i}: {path}")
+
+            # 确保目录存在
+            if not os.path.exists(path):
+                os.makedirs(path)
+                print(f"    创建目录: {path}")
+
+            # 创建文本文件
+            with open(test_file_path, 'w', encoding='utf-8') as f:
+                f.write(f"路径{i}的测试内容\n第二行\n第三行\n")
+            created_files.append(test_file_path)
+            print(f"    ✓ 创建文件: {test_file_path}")
+
+            # 测试读取
+            task_id = client.add({
+                "name": "read_all",
+                "arguments": {"filepath": test_file_path}
+            })
+            result = client.get_result(task_id, timeout=5)
+            print(f"    ✓ 读取成功: {result}")
+
+            # 测试追加
+            task_id = client.add({
+                "name": "append_line",
+                "arguments": {"filepath": test_file_path, "content": f"追加的第{i}行"}
+            })
+            result = client.get_result(task_id, timeout=5)
+            print(f"    ✓ 追加成功")
+
+            # 测试JSON写入
+            json_data = {
+                "path_id": i,
+                "path": path,
+                "test_name": f"多路径测试{i}",
+                "timestamp": time.time()
+            }
+            task_id = client.add({
+                "name": "write_JSON",
+                "arguments": {"filepath": test_json_path, "data": json_data}
+            })
+            result = client.get_result(task_id, timeout=5)
+            created_files.append(test_json_path)
+            print(f"    ✓ JSON写入成功: {test_json_path}")
+
+            # 测试JSON读取
+            task_id = client.add({
+                "name": "read_JSON",
+                "arguments": {"filepath": test_json_path}
+            })
+            result = client.get_result(task_id, timeout=5)
+            print(f"    ✓ JSON读取成功: {result}")
+
+        print(f"\n✓ 多路径测试完成，共操作 {len(created_files)} 个文件")
+
+        # ==================== 清理测试数据 ====================
+        print("\n" + "=" * 80)
+        print("清理测试数据")
+        print("=" * 80)
+
+        # 删除数据库
+        print("\n[21] 删除测试数据库...")
+        task_id = client.add({"name": "delete", "arguments": {"db_name": test_db}})
+        result = client.get_result(task_id, timeout=5)
+        print(f"✓ {result}")
+
+        # 删除测试文件
+        print("\n[22] 删除测试文件...")
+        if os.path.exists(test_file):
+            os.remove(test_file)
+            print(f"✓ 已删除: {test_file}")
+        if os.path.exists(test_json):
+            os.remove(test_json)
+            print(f"✓ 已删除: {test_json}")
 
     except Exception as e:
         print(f"\n✗ 测试过程中出现错误: {e}")
@@ -292,7 +532,7 @@ if __name__ == "__main__":
 
     finally:
         # 关闭客户端
-        print("\n[6] 关闭客户端...")
+        print("\n[23] 关闭客户端...")
         client.close()
         print("✓ 客户端已关闭")
 

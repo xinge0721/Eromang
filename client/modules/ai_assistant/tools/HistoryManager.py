@@ -1,7 +1,6 @@
 import os
 import json
 from typing import Callable
-from .FileEditor import FileEditor
 from .log import logger
 
 # assistant.json 的 token 数最大限制倍数
@@ -112,7 +111,6 @@ class HistoryManager:
         self._token_callback = token_callback  # 计算token的回调函数
         self._max_tokens = max_tokens          # 最大token限制
         self._valid_roles = {"user", "system", "assistant"}  # 有效角色
-        self._file_editor = FileEditor()       # 文件操作对象
     # ================ 设置历史路径 ===============
     def set_history_path(self, history_path: str):
         """
@@ -139,7 +137,7 @@ class HistoryManager:
             if dir_path and not os.path.exists(dir_path):
                 os.makedirs(dir_path, exist_ok=True)
             # 创建历史文件，包含提示词作为第一条消息
-            self._file_editor.write_JSON(self._history_path, [self._assistant_content])
+            self.write_JSON(self._history_path, [self._assistant_content])
     # ================ 清空对话历史 ===============
     def clear(self):
         """
@@ -150,7 +148,7 @@ class HistoryManager:
                 raise ValueError("历史文件路径不存在")
             
             # 重置为初始状态：只包含提示词
-            self._file_editor.write_JSON(self._history_path, [self._assistant_content])
+            self.write_JSON(self._history_path, [self._assistant_content])
         except Exception as e:
             raise RuntimeError(f"无法清空历史文件: {e}")
     # ================ 获取对话历史 ===============
@@ -161,7 +159,7 @@ class HistoryManager:
         if not os.path.exists(self._history_path):
             return []  # 如果历史文件不存在，返回空
         try:
-            data = self._file_editor.read_JSON(self._history_path)
+            data = self.read_JSON(self._history_path)
             if isinstance(data, list):
                 return data  # 返回历史列表
             return []
@@ -210,7 +208,7 @@ class HistoryManager:
         if total_tokens > self._max_tokens:
             self.trim(history, token_counts)  # 传入history和token_counts，避免重新读取和计算
         else:
-            self._file_editor.write_JSON(self._history_path, history)
+            self.write_JSON(self._history_path, history)
     # ================ 在指定位置插入对话历史 ===============
     def insert_POS(self, index: int, role: str, content: str):
         """
@@ -506,3 +504,48 @@ class HistoryManager:
                 json.dump(history, f, ensure_ascii=False, indent=2)  # 直接写入新历史
         except (OSError, IOError, PermissionError) as e:
             raise RuntimeError(f"无法覆写历史文件: {e}")
+
+    
+    # ================ JSON文件操作 ================
+    #  -------------- 读取JSON文件 --------------
+    def read_JSON(self, filepath,_encoding='utf-8'):
+        """
+        读取JSON文件
+        :param filepath: 文件路径
+        :param _encoding: 文件编码
+        :return: JSON数据
+        :error: 文件不存在
+        """
+        # 如果文件不存在，无法读取
+        if not os.path.exists(filepath):
+            return None
+        try:
+          # 读取文件
+          with open(filepath, 'r', encoding=_encoding) as f:
+              return json.load(f)
+        except Exception as e:
+          logger.error(f"读取JSON文件失败: {e}")
+          return None
+
+    
+    #  -------------- 写入JSON文件 --------------
+    def write_JSON(self, filepath, data, _encoding='utf-8'):
+        """
+        写入JSON文件（覆盖）
+        :param filepath: 文件路径
+        :param data: JSON数据
+        :param _encoding: 文件编码
+        :return: 是否成功
+        :error: 文件不存在
+        """
+        try:
+            # 确保目录存在
+            os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
+            
+            # 用'w'模式写入
+            with open(filepath, 'w', encoding=_encoding) as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            return True
+        except Exception as e:
+            logger.error(f"写入JSON失败: {e}")
+            return False

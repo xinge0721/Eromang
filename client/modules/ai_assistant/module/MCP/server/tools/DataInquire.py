@@ -2,12 +2,11 @@ import os
 import sqlite3
 
 # ================ 数据查询类 ================
-class inquire:
+class DataInquire:
     # ================ 文件 ================
     #  -------------- 查询文件目录 --------------
     # * file_path 文件路径
-    @staticmethod
-    def file_directory(file_path: str):
+    def file_directory(self, file_path: str):
         """
         查询文件目录
         :param file_path: 文件路径
@@ -22,8 +21,7 @@ class inquire:
 
     #  -------------- 查询文件内容 --------------
     # * file_path 文件路径
-    @staticmethod
-    def file_content(file_path: str):
+    def file_content(self, file_path: str):
         """
         查询文件内容
         :param file_path: 文件路径
@@ -37,8 +35,7 @@ class inquire:
         return file_content
     #  -------------- 查询文件行数 --------------
     # * file_path 文件路径
-    @staticmethod
-    def file_line_count(file_path: str):
+    def file_line_count(self, file_path: str):
         """
         查询文件行数
         :param file_path: 文件路径
@@ -54,8 +51,7 @@ class inquire:
     # --------------- 模糊查询文件内容 ---------------
     # * file_path 文件路径
     # * content 查询内容
-    @staticmethod
-    def file_content_fuzzy(file_path: str, content: str):
+    def file_content_fuzzy(self, file_path: str, content: str):
         """
         模糊查询文件内容
         :param file_path: 文件路径
@@ -84,8 +80,7 @@ class inquire:
     # ================ 数据库 ================
     #  -------------- 查询所有数据表 --------------
     # * db_name 数据库名称
-    @staticmethod
-    def database_all_table(db_name: str):
+    def database_all_table(self, db_name: str):
         """
         查询数据库所有数据表
         :param db_name: 数据库名称
@@ -112,8 +107,7 @@ class inquire:
     #  -------------- 查询表中所有数据 --------------
     # * db_name 数据库名称
     # * table_name 数据表名称
-    @staticmethod
-    def database_table_content(db_name: str, table_name: str):
+    def database_table_content(self, db_name: str, table_name: str):
         """
         查询数据表所有数据
         :param db_name: 数据库名称
@@ -152,8 +146,7 @@ class inquire:
     # * db_name 数据库名称
     # * table_name 数据表名称
     # * data_id 数据ID
-    @staticmethod
-    def database_table_data_exists(db_name: str, table_name: str, data_id: str):
+    def database_table_data_exists(self, db_name: str, table_name: str, data_id: str):
         """
         检查数据在表中是否存在
         :param db_name: 数据库名称
@@ -195,8 +188,7 @@ class inquire:
     #  -------------- 模糊查询数据库内容 --------------
     # * db_name 数据库名称
     # * content 查询内容
-    @staticmethod
-    def database_content_fuzzy(db_name: str, content: str):
+    def database_content_fuzzy(self, db_name: str, content: str):
         """
         模糊查询数据库内容（在所有表中搜索）
         :param db_name: 数据库名称
@@ -238,8 +230,7 @@ class inquire:
       # -------------- 统计数据数量 - 统计表中记录数--------------
     # * db_name 数据库名称
     # * table_name 数据表名称
-    @staticmethod
-    def database_table_data_count(db_name: str, table_name: str):
+    def database_table_data_count(self, db_name: str, table_name: str):
         """
         统计数据表数据数量
         :param db_name: 数据库名称
@@ -278,8 +269,7 @@ class inquire:
     # * db_name 数据库名称
     # * table_name 数据表名称
     # * data_ids 数据ID列表
-    @staticmethod
-    def database_table_data_batch(db_name: str, table_name: str, data_ids: list):
+    def database_table_data_batch(self, db_name: str, table_name: str, data_ids: list):
         """
         批量查询数据表数据
         :param db_name: 数据库名称
@@ -324,8 +314,7 @@ class inquire:
     # * db_name 数据库名称
     # * table_name 数据表名称
     # * content 查询内容
-    @staticmethod
-    def database_table_data_filter(db_name: str, table_name: str, content: str):
+    def database_table_data_filter(self, db_name: str, table_name: str, content: str):
         """
         按条件筛选数据表数据（在指定表中模糊搜索）
         :param db_name: 数据库名称

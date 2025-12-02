@@ -35,15 +35,13 @@ class DatabaseEditor:
         
         return engine, table_obj, metadata
 
-    @staticmethod
-    def _table_exists(engine, table_name: str) -> bool:
+    def _table_exists(self,engine, table_name: str) -> bool:
         """检查表是否存在"""
         inspector = inspect(engine)
         return table_name in inspector.get_table_names()
 
     # ================ 创建数据库 ================
-    @staticmethod
-    def connect(db_name: str) -> tuple[bool, str]:
+    def connect(self, db_name: str) -> tuple[bool, str]:
         """
         若数据库已存在，提前返回。否则创建数据库文件。
         :param db_name: 数据库名称
@@ -72,8 +70,7 @@ class DatabaseEditor:
             return False, f"数据库创建失败: {e}"
 
     # ================ 删除数据库 ================
-    @staticmethod
-    def delete(db_name: str) -> tuple[bool, str]:
+    def delete(self, db_name: str) -> tuple[bool, str]:
         """删除数据库文件
         :param db_name: 数据库名称
         :return: 是否成功
@@ -92,8 +89,7 @@ class DatabaseEditor:
             return False, f"数据库文件删除失败: {e}"
 
     # ================ 插入数据 ================
-    @staticmethod
-    def insert_data(db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
+    def insert_data(self, db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
         """
         插入数据到指定表，如果ID已存在则失败
         :param db_name: 数据库名称
@@ -134,8 +130,7 @@ class DatabaseEditor:
             return False, f"插入数据失败: {e}"
     
     # ================ 更新数据 ================
-    @staticmethod
-    def update_data(db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
+    def update_data(self, db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
         """
         更新指定ID的数据内容
         :param db_name: 数据库名称
@@ -180,8 +175,7 @@ class DatabaseEditor:
             return False, f"更新数据失败: {e}"
     
     # ================ 删除数据 ================
-    @staticmethod
-    def delete_data(db_name: str, table_name: str, data_id: str) -> tuple[bool, str]:
+    def delete_data(self, db_name: str, table_name: str, data_id: str) -> tuple[bool, str]:
         """
         删除指定ID的数据
         :param db_name: 数据库名称
@@ -225,8 +219,7 @@ class DatabaseEditor:
             return False, f"删除数据失败: {e}"
     
     # ================ 创建数据表 ================
-    @staticmethod
-    def create_table(db_name: str, table_name: str) -> tuple[bool, str]:
+    def create_table(self, db_name: str, table_name: str) -> tuple[bool, str]:
         """
         在指定数据库中创建数据表
         :param db_name: 数据库名称
@@ -260,8 +253,7 @@ class DatabaseEditor:
             return False, f"创建数据表失败: {e}"
     
     # ================ 删除数据表 ================
-    @staticmethod
-    def delete_table(db_name: str, table_name: str) -> tuple[bool, str]:
+    def delete_table(self, db_name: str, table_name: str) -> tuple[bool, str]:
         """
         删除指定数据库中的数据表
         :param db_name: 数据库名称
@@ -295,8 +287,7 @@ class DatabaseEditor:
             return False, f"删除数据表失败: {e}"
 
     # ================ 写入数据库 ================
-    @staticmethod
-    def write(db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
+    def write(self, db_name: str, table_name: str, data_id: str, content: str) -> tuple[bool, str]:
         """
         写入数据到数据库，如果ID已存在则更新内容（UPSERT操作）
         :param db_name: 数据库名称
@@ -344,8 +335,7 @@ class DatabaseEditor:
             return False, f"写入数据库失败: {e}"
 
     # ================ 读取数据库 ================
-    @staticmethod
-    def read(db_name: str, table_name: str, data_id: str) -> tuple[bool, str]:
+    def read(self, db_name: str, table_name: str, data_id: str) -> tuple[bool, str]:
         """
         从指定表中读取数据
         :param db_name: 数据库名称
@@ -389,8 +379,7 @@ class DatabaseEditor:
             return False, f"读取数据库失败: {e}"
 
     # ================ 列出所有表 ================
-    @staticmethod
-    def list_tables(db_name: str) -> tuple[bool, list]:
+    def list_tables(self, db_name: str) -> tuple[bool, list]:
         """
         列出数据库中的所有表
         :param db_name: 数据库名称
@@ -413,8 +402,7 @@ class DatabaseEditor:
             return False, []
 
     # ================ 列出表中所有数据 ================
-    @staticmethod
-    def list_all_data(db_name: str, table_name: str) -> tuple[bool, list]:
+    def list_all_data(self, db_name: str, table_name: str) -> tuple[bool, list]:
         """
         列出表中的所有数据
         :param db_name: 数据库名称
@@ -448,8 +436,7 @@ class DatabaseEditor:
             return False, []
 
     # ================ 获取记录数 ================
-    @staticmethod
-    def count_records(db_name: str, table_name: str) -> tuple[bool, int]:
+    def count_records(self, db_name: str, table_name: str) -> tuple[bool, int]:
         """
         获取表中的记录数
         :param db_name: 数据库名称
@@ -482,8 +469,7 @@ class DatabaseEditor:
             return False, 0
 
     # ================ 检查数据是否存在 ================
-    @staticmethod
-    def data_exists(db_name: str, table_name: str, data_id: str) -> tuple[bool, bool]:
+    def data_exists(self, db_name: str, table_name: str, data_id: str) -> tuple[bool, bool]:
         """
         检查数据是否存在
         :param db_name: 数据库名称
