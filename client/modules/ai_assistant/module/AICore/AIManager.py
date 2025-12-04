@@ -24,8 +24,11 @@ import os
 import json
 from typing import Optional, Dict, Any, Generator
 
-from .Tool import OPEN_AI
-from .Model import DeepSeek, Doubao, Kimi, Qwen
+from .Tool.OPEN_AI import OPEN_AI
+from .Model import DeepSeek
+from .Model import Doubao
+from .Model import Kimi
+from .Model import Qwen
 from tools import logger
 class AIFactory:
     """
@@ -42,10 +45,10 @@ class AIFactory:
         knowledge_ai_client: 知识模型的OPEN_AI客户端
 
     配置文件:
-        - Role/secret_key.json: 存储各供应商的API密钥
-        - Role/config.json: 存储各模型的配置参数
-        - Role/role_A/: 对话模型的角色目录（包含assistant.json和history.json）
-        - Role/role_B/: 知识模型的角色目录
+        - role/secret_key.json: 存储各供应商的API密钥
+        - role/config.json: 存储各模型的配置参数
+        - role/role_A/: 对话模型的角色目录（包含assistant.json和history.json）
+        - role/role_B/: 知识模型的角色目录
     """
 
     def __init__(self) -> None:
@@ -143,7 +146,7 @@ class AIFactory:
             
             # 获取对话模型的角色目录路径
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            dialogue_history_path = os.path.join(os.path.dirname(script_dir), "Role", "role_A")
+            dialogue_history_path = os.path.join(script_dir, "role", "role_A")
             
             # 创建模型客户端
             self.dialogue_ai_client = OPEN_AI(
@@ -167,7 +170,7 @@ class AIFactory:
             
             # 获取知识模型的角色目录路径
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            knowledge_history_path = os.path.join(os.path.dirname(script_dir), "Role", "role_B")
+            knowledge_history_path = os.path.join(script_dir, "role", "role_B")
             
             # 创建模型客户端
             self.knowledge_ai_client = OPEN_AI(
@@ -186,7 +189,7 @@ class AIFactory:
         """
         从配置文件中提取模型参数
 
-        从 Role/config.json 中读取指定供应商和模型的配置参数。
+        从 role/config.json 中读取指定供应商和模型的配置参数。
 
         参数:
             vendor: 供应商名称（如 "deepseek", "qwen"）
@@ -210,9 +213,9 @@ class AIFactory:
                 }
             }
         """
-        # 获取当前文件所在目录的父目录，确保路径正确
+        # 获取当前文件所在目录，确保路径正确
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(os.path.dirname(script_dir), "Role", "config.json")
+        config_path = os.path.join(script_dir, "role", "config.json")
         
         if not os.path.isfile(config_path):
             raise FileNotFoundError(f"配置文件未找到: {config_path}")
@@ -233,7 +236,7 @@ class AIFactory:
         """
         从配置文件中提取API密钥
 
-        从 Role/secret_key.json 中读取指定供应商的API密钥。
+        从 role/secret_key.json 中读取指定供应商的API密钥。
 
         参数:
             vendor: 供应商名称（如 "deepseek", "qwen"）
@@ -245,9 +248,9 @@ class AIFactory:
             FileNotFoundError: 配置文件不存在
             ValueError: 供应商配置无效
         """
-        # 获取当前文件所在目录的父目录，确保路径正确
+        # 获取当前文件所在目录，确保路径正确
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(os.path.dirname(script_dir), "Role", "secret_key.json")
+        config_path = os.path.join(script_dir, "role", "secret_key.json")
         
         if not os.path.isfile(config_path):
             raise FileNotFoundError(f"配置文件未找到: {config_path}")

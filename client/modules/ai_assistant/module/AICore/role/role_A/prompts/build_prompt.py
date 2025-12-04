@@ -26,7 +26,6 @@ def build_prompt():
         '09_deep_thinking.txt',  # ⚠️ 思维链必须在前面，影响所有输出
         '03_json_format.txt',
         '04_code_structure.txt',
-        '05_pid_requirements.txt',
         '06_examples_correct.txt',
         '07_examples_wrong.txt',
         '08_anti_history_pollution.txt'

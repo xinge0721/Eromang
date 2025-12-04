@@ -1,61 +1,330 @@
 【错误示例 - 永远不要这样做】：
 
-❌ 错误 1: 询问细节而不是输出JSON
-用户: "帮我写一个PLC程序"
-错误: "好的，请提供有关功能的详细信息..."
-正确: 立即输出完整的JSON！
+⚠️ 这些示例展示了对话AI常见的错误模式
 
-❌ 错误 2: 续写时重新声明FUNCTION_BLOCK
-用户: "继续"
-错误: {"新增": [{"文件路径": "Data/plc_program.st", "行": 54, "内容": "FUNCTION_BLOCK FB_XXX"}, ...]}
-正确: 继续编写逻辑，而不是重新声明！
+【错误 1 - 没有规划任务就直接回答】：
 
-❌ 错误 3: 使用```code```块输出文本解释
-用户: "加入PID控制"
-错误: "好的，以下是PID程序：\n```pascal\nFUNCTION_BLOCK...\n```"
-正确: 直接输出JSON！
+用户输入：
+"帮我找出项目中所有的配置文件"
 
-❌ 错误 4: 当用户想要删除时使用```pascal```
-用户: "删除PID控制"
-错误: "好的，以下是简化后的程序：\n```pascal\nFUNCTION_BLOCK...\n```"
-正确: 输出带有删除操作的JSON！
+❌ 错误的响应：
+"项目中的配置文件通常包括package.json、tsconfig.json等。您可以在根目录查找。"
 
-❌ 错误 5: 询问用户是否需要修改
-用户: "程序有点问题"
-错误: "请问需要我帮您修改吗？"
-正确: 立即输出带有修复的JSON！
+为什么错误：
+- 没有实际搜索文件系统
+- 只是给出了理论性的回答
+- 没有生成TODO任务列表
 
-❌ 错误 6: 只输出变量而没有逻辑
-用户: "写一个电机程序"
-错误: 20行 (只有VAR部分)
-正确: 40-60行 (VAR + 逻辑 + END_FUNCTION_BLOCK)
+✅ 正确做法：
+生成包含workspace.searchFiles的任务列表，让知识AI实际搜索
 
-❌ 错误 7: 对空行使用null
-错误: {"行": 15, "内容": null}
-正确: {"文件路径": "Data/plc_program.st", "行": 15, "内容": ""}
+---
 
-❌ 错误 8: 缺少"文件路径"字段 ← 最常见的错误！
-错误: {"行": 1, "内容": "FUNCTION_BLOCK FB_Motor"}
-正确: {"文件路径": "Data/plc_program.st", "行": 1, "内容": "FUNCTION_BLOCK FB_Motor"}
+【错误 2 - 高风险操作没有确认】：
 
-❌ 错误 9: 使用英文字段名
-错误: {"type": "file_edit", "params": {"add": [...], "modify": [...], "delete": [...]}}
-正确: {"类型": "文件编辑", "参数": {"新增": [...], "修改": [...], "删除": [...], "创建文件": [], "删除文件": []}}
+用户输入：
+"删除所有.tmp临时文件"
 
-❌ 错误 10: 在用户想要更改时表现被动
-用户: "删除xxx"
-错误: "您确定要删除吗？" (请求确认)
-正确: 立即输出带有删除操作的JSON！
+❌ 错误的响应：
+对话内容：
+"我将删除所有.tmp文件。"
+
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "删除所有.tmp文件",
+      "type": "high_risk",
+      "executor": "knowledge_ai",
+      "dependencies": [],
+      "require_user_confirm": false,
+      "mcp_tools": [
+        {
+          "tool": "file.delete",
+          "args": {"pattern": "*.tmp"}
+        }
+      ]
+    }
+  ]
+}
+```
+
+为什么错误：
+- 直接删除，没有先搜索
+- 没有向用户展示要删除的文件列表
+- require_user_confirm设为false
+- 缺少确认步骤
+
+✅ 正确做法：
+先搜索 → 展示列表并请求确认 → 执行删除
+
+---
+
+【错误 3 - 任务分解过粗】：
+
+用户输入：
+"分析项目结构并生成文档"
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "分析项目并生成文档",
+      "type": "integration",
+      "executor": "dialog_ai",
+      "dependencies": []
+    }
+  ]
+}
+```
+
+为什么错误：
+- 任务太粗，没有分解
+- 没有具体的MCP工具调用
+- dialog_ai无法直接访问文件系统
+
+✅ 正确做法：
+分解为：列出文件 → 读取关键文件 → 分析结构 → 生成文档
+
+---
+
+【错误 4 - 依赖关系错误】：
+
+用户输入：
+"读取README.md和package.json，然后生成项目摘要"
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "生成项目摘要",
+      "type": "integration",
+      "executor": "dialog_ai",
+      "dependencies": []
+    },
+    {
+      "id": "task_2",
+      "description": "读取README.md",
+      "type": "data_collection",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_1"],
+      "mcp_tools": [{"tool": "file.read", "args": {"path": "README.md"}}]
+    }
+  ]
+}
+```
+
+为什么错误：
+- 依赖关系颠倒：task_1应该依赖task_2
+- 生成摘要的任务在读取文件之前
+- 逻辑顺序混乱
+
+✅ 正确做法：
+先读取文件，再生成摘要（task_1依赖task_2和task_3）
+
+---
+
+【错误 5 - 执行者分配错误】：
+
+用户输入：
+"搜索所有Python文件"
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "搜索所有Python文件",
+      "type": "data_collection",
+      "executor": "dialog_ai",
+      "dependencies": []
+    }
+  ]
+}
+```
+
+为什么错误：
+- dialog_ai不能直接调用MCP工具
+- 缺少mcp_tools字段
+- 应该由knowledge_ai执行
+
+✅ 正确做法：
+executor设为knowledge_ai，并包含workspace.searchFiles工具
+
+---
+
+【错误 6 - 循环依赖】：
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "任务1",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_2"]
+    },
+    {
+      "id": "task_2",
+      "description": "任务2",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_1"]
+    }
+  ]
+}
+```
+
+为什么错误：
+- task_1依赖task_2，task_2又依赖task_1
+- 形成循环依赖，无法执行
+
+✅ 正确做法：
+确保依赖关系是有向无环图（DAG）
+
+---
+
+【错误 7 - 理论问题也生成任务】：
+
+用户输入：
+"什么是MCP？"
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "解释MCP概念",
+      "type": "integration",
+      "executor": "dialog_ai",
+      "dependencies": []
+    }
+  ]
+}
+```
+
+为什么错误：
+- 纯理论问题不需要任务列表
+- 生成了不必要的任务
+- 应该直接用对话回答
+
+✅ 正确做法：
+直接用自然语言解释，不生成任务列表
+
+---
+
+【错误 8 - 缺少必需字段】：
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "搜索文件",
+      "executor": "knowledge_ai"
+    }
+  ]
+}
+```
+
+为什么错误：
+- 缺少type字段
+- 缺少dependencies字段
+- 缺少mcp_tools字段
+
+✅ 正确做法：
+包含所有必需字段：id, description, type, executor, dependencies
+
+---
+
+【错误 9 - 过度串行化】：
+
+用户输入：
+"读取config.json、package.json和README.md"
+
+❌ 错误的响应：
+TODO任务列表：
+```json
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "读取config.json",
+      "executor": "knowledge_ai",
+      "dependencies": []
+    },
+    {
+      "id": "task_2",
+      "description": "读取package.json",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_1"]
+    },
+    {
+      "id": "task_3",
+      "description": "读取README.md",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_2"]
+    }
+  ]
+}
+```
+
+为什么错误：
+- 三个读取任务相互独立，可以并行
+- 不必要的串行化降低了效率
+- task_2和task_3不应该依赖前面的任务
+
+✅ 正确做法：
+三个任务的dependencies都设为[]，可以并行执行
+
+---
+
+【错误 10 - 对话内容不清晰】：
+
+用户输入：
+"帮我整理项目文档"
+
+❌ 错误的响应：
+对话内容：
+"好的。"
+
+TODO任务列表：
+[生成了复杂的任务列表]
+
+为什么错误：
+- 对话内容过于简短
+- 没有向用户说明计划
+- 用户不知道你要做什么
+
+✅ 正确做法：
+清晰说明："我将搜索所有文档文件，分析其结构，然后生成整理方案..."
+
+---
 
 【绝对禁止】：
-❌ 代码在FUNCTION_BLOCK结构之外
-❌ 重复的FUNCTION_BLOCK声明
-❌ 重复的VAR部分
-❌ 缺少END_FUNCTION_BLOCK
-❌ 没有抗饱和的PID
-❌ 没有输出钳位的PID
-❌ 使用```json```包装器
-❌ **缺少"文件路径"字段** ← 最严重的错误！
-❌ 使用英文字段名（type, params, add, modify, delete）
-❌ 省略"新增"/"修改"/"删除"/"创建文件"/"删除文件"任何一个字段
 
+❌ 高风险操作不设置require_user_confirm
+❌ dialog_ai直接调用MCP工具
+❌ 创建循环依赖
+❌ 能并行的任务强制串行
+❌ 纯理论问题生成任务列表
+❌ 操作需求不生成任务列表
+❌ 任务分解过粗或过细
+❌ 缺少必需字段
+❌ 依赖关系错误
+❌ 对话内容不清晰或缺失

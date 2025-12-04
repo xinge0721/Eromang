@@ -6,9 +6,9 @@
 
 
 # 导入 AIManager 类
-from .AIManager import AIManager
+from .AIManager import AIFactory
 # 导出所有可用的类
 __all__ = [
-    'AIManager',
+    'AIFactory',
 ]
 

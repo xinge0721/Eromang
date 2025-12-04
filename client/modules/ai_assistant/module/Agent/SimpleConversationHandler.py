@@ -100,56 +100,22 @@ class SimpleConversationHandler:
         """
         print("\n" + "-" * 80)
 
-        # ===== 步骤 1: 对话模型判断是否需要知识模型 =====
-        print("\n[步骤 1] 对话模型分析问题...")
+        # ===== 步骤 1: 使用知识模型判断是否需要数据收集 =====
+        print("\n[步骤 1] 分析问题类型...")
 
-        # 构造判断 prompt
-        judge_prompt = f"""用户问题：{message}
+        # 简单的启发式判断：包含特定关键词则需要知识模型
+        keywords_need_knowledge = [
+            '读取', '查询', '搜索', '查找', '文件', '数据库', '内容',
+            '列出', '显示', '获取', '统计', '分析', 'read', 'query',
+            'search', 'file', 'database', 'list', 'show', 'get'
+        ]
 
-请判断这个问题是否需要知识模型来收集数据。
+        need_knowledge = any(keyword in message.lower() for keyword in keywords_need_knowledge)
 
-如果需要知识模型（例如需要读取文件、查询数据库、搜索信息等），请回复：
-{{"need_knowledge": true, "reason": "需要的原因"}}
-
-如果不需要知识模型（例如简单的对话、解释概念等），请回复：
-{{"need_knowledge": false, "reason": "不需要的原因"}}
-
-只输出 JSON，不要其他内容。"""
-
-        # 调用对话模型
-        response = ""
-        for chunk in self.dialogue_callback(judge_prompt):
-            response += chunk
-
-        # 解析判断结果
-        try:
-            # 提取 JSON
-            json_start = response.find('{')
-            json_end = response.rfind('}') + 1
-            if json_start >= 0 and json_end > json_start:
-                json_str = response[json_start:json_end]
-                judge_result = json.loads(json_str)
-                need_knowledge = judge_result.get("need_knowledge", False)
-                reason = judge_result.get("reason", "")
-                print(f"✓ 判断结果: {'需要' if need_knowledge else '不需要'}知识模型")
-                print(f"  原因: {reason}")
-            else:
-                # 如果没有找到 JSON，默认不需要知识模型
-                need_knowledge = False
-                print("✓ 判断结果: 不需要知识模型（默认）")
-        except Exception as e:
-            print(f"  警告: 解析判断结果失败，默认不需要知识模型: {e}")
-            need_knowledge = False
-
-        # 清理对话历史中的判断消息（避免污染历史）
-        try:
-            history = self.dialogue_history.get()
-            if len(history) >= 2:
-                # 删除最后两条（用户的判断请求和助手的判断回复）
-                self.dialogue_history.delete(len(history) - 1)
-                self.dialogue_history.delete(len(history) - 2)
-        except:
-            pass
+        if need_knowledge:
+            print(f"✓ 判断结果: 需要知识模型（检测到数据操作关键词）")
+        else:
+            print(f"✓ 判断结果: 不需要知识模型（简单对话）")
 
         knowledge_results = []
 
@@ -302,6 +268,22 @@ class SimpleConversationHandler:
         # ===== 步骤 5: 对话模型生成最终回答 =====
         print("\n[步骤 5] 对话模型生成回答...")
 
+        # 注入明确的指令：现在是对话阶段，不是任务规划阶段
+        dialogue_instruction = """
+⚠️ 当前阶段：自然对话回答
+
+现在请用自然、友好的语言回答用户的问题。
+
+重要提示：
+- 不要输出 JSON 格式
+- 不要输出任务列表
+- 不要输出思考过程
+- 直接用自然语言回答用户
+- 如果有知识模型收集的数据，请整合这些数据来回答
+- 保持对话友好、清晰、有帮助
+"""
+        self.dialogue_history.insert("system", dialogue_instruction)
+
         # 将知识结果注入到对话历史
         if knowledge_results:
             results_summary = "\n\n".join([
@@ -318,15 +300,21 @@ class SimpleConversationHandler:
             print(chunk, end='', flush=True)
         print("\n")
 
-        # 清理临时注入的知识结果
-        if knowledge_results:
-            try:
-                history = self.dialogue_history.get()
-                for i in range(len(history) - 1, -1, -1):
-                    if history[i].get("role") == "system" and "知识模型收集的数据" in history[i].get("content", ""):
-                        self.dialogue_history.delete(i)
-                        break
-            except:
-                pass
+        # 清理临时注入的指令和知识结果
+        try:
+            history = self.dialogue_history.get()
+            # 从后往前删除临时注入的消息
+            indices_to_delete = []
+            for i in range(len(history) - 1, -1, -1):
+                if history[i].get("role") == "system":
+                    content = history[i].get("content", "")
+                    if "当前阶段：自然对话回答" in content or "知识模型收集的数据" in content:
+                        indices_to_delete.append(i)
+
+            # 删除找到的索引（从大到小删除，避免索引变化）
+            for idx in sorted(indices_to_delete, reverse=True):
+                self.dialogue_history.delete(idx)
+        except Exception as e:
+            print(f"清理临时消息失败: {e}")
 
         print("-" * 80)

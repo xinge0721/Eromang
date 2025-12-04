@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-搜索助手提示词构建脚本
+知识AI提示词构建脚本
 将模块化的提示词文件整合成完整的 assistant.json
 """
 
@@ -21,15 +21,14 @@ def load_module(filename):
 def build_prompt():
     """构建完整提示词"""
     modules = [
-        '01_base_role.txt',           # 基础角色定义
-        '02_search_decision.txt',     # 搜索模式判断
-        '03_todo_generation.txt',     # TODO列表生成
-        '04_search_execution.txt',    # 搜索执行规则
-        '05_json_format.txt'          # JSON格式规范
+        '01_base_role.txt',           # 基础角色定位
+        '02_task_planning.txt',       # 任务理解与工具调用规划
+        '03_result_processing.txt',   # 结果处理与整理
+        '04_feedback_handling.txt'    # 反馈处理与策略调整
     ]
-    
+
     print("=" * 50)
-    print("开始构建搜索助手提示词...")
+    print("开始构建知识AI提示词...")
     print("=" * 50)
     
     content_parts = []

@@ -1,50 +1,211 @@
-【JSON格式 - 严格规则】：
+【TODO任务列表格式】：
 
-⚠️ 重要：必须使用中文字段名，每个操作必须包含"文件路径"！
+⚠️ 重要：任务列表是结构化的任务图，用于指导TaskScheduler执行
 
-要求结构:
+【任务列表结构】：
+```
 {
-  "类型": "文件编辑",
-  "参数": {
-    "新增": [{"文件路径": "Data/plc_program.st", "行": 1, "内容": "xxx"}],
-    "修改": [{"文件路径": "Data/plc_program.st", "行": 2, "内容": "xxx"}],
-    "删除": [{"文件路径": "Data/plc_program.st", "行": 3}],
-    "创建文件": [{"文件路径": "Data/new_file.st"}],
-    "删除文件": [{"文件路径": "Data/old_file.st"}]
-  }
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "任务描述",
+      "type": "data_collection | file_operation | high_risk | integration",
+      "executor": "knowledge_ai | dialog_ai",
+      "dependencies": ["task_id1", "task_id2"],
+      "require_user_confirm": false,
+      "mcp_tools": [
+        {
+          "tool": "workspace.searchFiles",
+          "args": {"pattern": "*.json"}
+        }
+      ]
+    }
+  ]
 }
+```
 
-【强制性约束】：
-1. JSON必须只有2个顶级字段: "类型" 和 "参数"
-2. "类型" 的值必须是字符串 "文件编辑"
-3. "参数" 必须包含5个字段: "新增", "修改", "删除", "创建文件", "删除文件"
-4. **每个操作项必须包含"文件路径"字段！**
-5. "新增" 数组成员: {"文件路径": string, "行": int, "内容": string}
-6. "修改" 数组成员: {"文件路径": string, "行": int, "内容": string}
-7. "删除" 数组成员: {"文件路径": string, "行": int}
-8. "创建文件" 数组成员: {"文件路径": string}
-9. "删除文件" 数组成员: {"文件路径": string}
-10. 字段名必须是中文: "类型", "参数", "新增", "修改", "删除", "创建文件", "删除文件", "文件路径", "行", "内容"
-11. 空操作使用空数组 [], 绝不能省略字段
-12. JSON内部不能有注释
-13. 不能有markdown包装 (不能有 ```)
-14. 必须能被 json.loads() 解析
-15. "内容" 中的ST代码可以有 // 注释
-16. 空行: 使用 {"文件路径": "xxx", "行": N, "内容": ""} 而不是 null
+【字段说明】：
 
-【文件路径规则】：
-- 默认工作目录: Data/
-- 默认PLC文件: Data/plc_program.st
-- **每个操作必须明确指定文件路径**
-- 如果用户没有指定文件，默认使用 "Data/plc_program.st"
-- 同一个JSON可以操作多个不同文件
+1. **id** (必需)
+   - 任务的唯一标识符
+   - 格式：task_1, task_2, task_3...
+   - 用于建立任务间的依赖关系
 
-❌ 禁止的JSON错误:
-- 使用 ```json``` 包装
-- 使用英文字段名 ("type", "params", "add", "modify")
-- **省略"文件路径"字段** ← 这是最常见的错误！
-- 省略 "新增", "修改", "删除", "创建文件", "删除文件" 任何一个字段
-- null 内容 (空行请使用 "")
-- JSON结构中有注释
-- 所有操作都写到同一个文件但没有指定文件路径
+2. **description** (必需)
+   - 清晰的任务描述
+   - 说明这个任务要做什么
+   - 示例："搜索工作区中的所有配置文件"
 
+3. **type** (必需)
+   - data_collection: 数据收集任务（只读）
+   - file_operation: 文件操作任务（写入）
+   - high_risk: 高风险任务（删除、批量修改等）
+   - integration: 信息整合任务（纯处理）
+
+4. **executor** (必需)
+   - knowledge_ai: 由知识AI执行（通过MCP工具）
+   - dialog_ai: 由对话AI执行（用户确认、结果整合等）
+
+5. **dependencies** (可选)
+   - 依赖的任务ID列表
+   - 这些任务必须先完成，当前任务才能执行
+   - 空数组表示无依赖，可以立即执行
+
+6. **require_user_confirm** (可选)
+   - 是否需要用户确认
+   - 高风险操作必须设为true
+   - 默认为false
+
+7. **mcp_tools** (可选)
+   - 需要调用的MCP工具列表
+   - 仅当executor为knowledge_ai时需要
+   - 包含工具名和参数
+
+【完整示例 1 - 搜索文件】：
+```
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "搜索工作区中的所有配置文件",
+      "type": "data_collection",
+      "executor": "knowledge_ai",
+      "dependencies": [],
+      "require_user_confirm": false,
+      "mcp_tools": [
+        {
+          "tool": "workspace.searchFiles",
+          "args": {
+            "pattern": "*.{json,yaml,yml,config}",
+            "limit": 50
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_2",
+      "description": "整理搜索结果并呈现给用户",
+      "type": "integration",
+      "executor": "dialog_ai",
+      "dependencies": ["task_1"],
+      "require_user_confirm": false
+    }
+  ]
+}
+```
+
+【完整示例 2 - 删除文件（高风险）】：
+```
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "搜索所有临时文件",
+      "type": "data_collection",
+      "executor": "knowledge_ai",
+      "dependencies": [],
+      "require_user_confirm": false,
+      "mcp_tools": [
+        {
+          "tool": "workspace.searchFiles",
+          "args": {
+            "pattern": "*.tmp"
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_2",
+      "description": "向用户确认删除操作",
+      "type": "high_risk",
+      "executor": "dialog_ai",
+      "dependencies": ["task_1"],
+      "require_user_confirm": true
+    },
+    {
+      "id": "task_3",
+      "description": "执行删除操作",
+      "type": "high_risk",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_2"],
+      "require_user_confirm": false,
+      "mcp_tools": [
+        {
+          "tool": "file.delete",
+          "args": {
+            "path": "${task_1.result.files}"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+【完整示例 3 - 多步骤任务】：
+```
+{
+  "tasks": [
+    {
+      "id": "task_1",
+      "description": "列出项目根目录结构",
+      "type": "data_collection",
+      "executor": "knowledge_ai",
+      "dependencies": [],
+      "mcp_tools": [
+        {
+          "tool": "workspace.listFiles",
+          "args": {"path": "./"}
+        }
+      ]
+    },
+    {
+      "id": "task_2",
+      "description": "读取package.json文件",
+      "type": "data_collection",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_1"],
+      "mcp_tools": [
+        {
+          "tool": "file.read",
+          "args": {"path": "package.json"}
+        }
+      ]
+    },
+    {
+      "id": "task_3",
+      "description": "读取README.md文件",
+      "type": "data_collection",
+      "executor": "knowledge_ai",
+      "dependencies": ["task_1"],
+      "mcp_tools": [
+        {
+          "tool": "file.read",
+          "args": {"path": "README.md"}
+        }
+      ]
+    },
+    {
+      "id": "task_4",
+      "description": "分析项目结构并生成文档",
+      "type": "integration",
+      "executor": "dialog_ai",
+      "dependencies": ["task_2", "task_3"]
+    }
+  ]
+}
+```
+
+【关键规则】：
+
+✅ 任务ID必须唯一且连续
+✅ 依赖关系必须正确（不能循环依赖）
+✅ 高风险操作必须设置require_user_confirm
+✅ knowledge_ai的任务必须包含mcp_tools
+✅ 任务描述要清晰明确
+
+❌ 禁止事项：
+❌ 不要创建循环依赖（task_1依赖task_2，task_2又依赖task_1）
+❌ 不要遗漏必需字段
+❌ 不要在高风险操作中跳过用户确认
+❌ 不要让dialog_ai直接调用MCP工具
