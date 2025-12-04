@@ -6,6 +6,8 @@ import json
 from Tools.DatabaseEditor import DatabaseEditor
 from Tools.DataInquire import DataInquire
 from Tools.FileEditor import FileEditor
+from Tools.WorkspaceManager import WorkspaceManager
+from Tools.TaskManager import TaskManager
 
 class MCPServer:
     def __init__(self):
@@ -15,6 +17,8 @@ class MCPServer:
         self.database_editor = DatabaseEditor()
         self.data_inquire = DataInquire()
         self.file_editor = FileEditor()
+        self.workspace_manager = WorkspaceManager()
+        self.task_manager = TaskManager()
 
         self.add_tool()
 
@@ -76,6 +80,23 @@ class MCPServer:
         self.mcp.add_tool(Tool.from_function(self.file_editor.read_JSON))
         self.mcp.add_tool(Tool.from_function(self.file_editor.write_JSON))
         self.mcp.add_tool(Tool.from_function(self.file_editor.append_JSON))
+
+        # WorkspaceManager 工具
+        self.mcp.add_tool(Tool.from_function(self.workspace_manager.scan_workspace))
+        self.mcp.add_tool(Tool.from_function(self.workspace_manager.search_files))
+        self.mcp.add_tool(Tool.from_function(self.workspace_manager.get_file_metadata))
+        self.mcp.add_tool(Tool.from_function(self.workspace_manager.list_files_simple))
+
+        # TaskManager 工具
+        self.mcp.add_tool(Tool.from_function(self.task_manager.create_task_list))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.get_task_list))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.get_next_task))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.update_task_status))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.add_task))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.clear_task_list))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.get_task_summary))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.get_all_task_lists))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.get_task_results))
 
 if __name__ == "__main__":
     _MCPServer = MCPServer()

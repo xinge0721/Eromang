@@ -10,13 +10,11 @@ Agent 模块
     - _Dialogue: 对话模型处理类（私有）
 """
 
-from .AIManager import AIFactory
-from .ConversationHandler import ConversationHandler
+from .SimpleConversationHandler import SimpleConversationHandler
 
 # 定义模块导出的公共接口
 __all__ = [
-    'AIFactory',
-    'ConversationHandler'
+    'SimpleConversationHandler',
 ]
 
 # 模块版本

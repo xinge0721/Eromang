@@ -40,7 +40,6 @@ class AIFactory:
         knowledge_ai: 知识模型实例
         dialogue_ai_client: 对话模型的OPEN_AI客户端
         knowledge_ai_client: 知识模型的OPEN_AI客户端
-        default_output_file: 默认输出文件路径（可选）
 
     配置文件:
         - Role/secret_key.json: 存储各供应商的API密钥
@@ -49,22 +48,14 @@ class AIFactory:
         - Role/role_B/: 知识模型的角色目录
     """
 
-    def __init__(self, default_output_file: Optional[str] = None) -> None:
+    def __init__(self) -> None:
         """
         初始化AI工厂
-
-        参数:
-            default_output_file: 默认输出文件路径。如果为None，则使用严格模式，
-                               所有文件操作必须在JSON中明确指定路径
         """
         self.dialogue_ai = None  # 对话模型实例
         self.knowledge_ai = None  # 知识模型实例
         self.dialogue_ai_client = None  # 对话模型客户端
         self.knowledge_ai_client = None  # 知识模型客户端
-
-        # ⚠️ 严格模式：不设置任何默认路径
-        # 如果需要文件操作，必须在JSON中明确指定文件路径
-        self.default_output_file = default_output_file
     
     def connect(
         self,

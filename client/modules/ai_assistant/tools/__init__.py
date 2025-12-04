@@ -16,17 +16,13 @@
     - logger: 日志系统
 """
 
-from .HistoryManager import HistoryManager
 from .AllEventsHandler import AllEventsHandler
 from .log import logger
-from .ConfigValidator import ConfigValidator
 
 # 导出所有可用的符号
 __all__ = [
-    'HistoryManager',
     'AllEventsHandler',
     'logger',
-    'ConfigValidator',
 ]
 
 # 版本信息
