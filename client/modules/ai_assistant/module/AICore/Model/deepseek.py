@@ -237,13 +237,13 @@ class DeepSeek:
             return {"content": content}
 
         thinking = delta.get('reasoning_content', None)
-        print(f"\n需要提取的数据是: {thinking}")
+        # print(f"\n需要提取的数据是: {thinking}")
         if thinking is not None:
             return {"thinking": thinking}
         # 如果没有文本内容，检查是否有工具调用
 
         tool_calls = delta.get('tool_calls', None)
-        print(f"\n需要提取的数据是: {tool_calls}")
+        # print(f"\n需要提取的数据是: {tool_calls}")
         if tool_calls is not None and len(tool_calls) > 0:
             return {"tool_calls": tool_calls}
 

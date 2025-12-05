@@ -65,34 +65,30 @@ def test_math_tools():
             response += content
             print(content, end='', flush=True)
         elif type == "tool_calls":
-            tool_calls.append(content)
+            tool_calls.append(content[0])
+    print("\n\n" + "-" * 80)
+    print(f"\n工具调用: {tool_calls}")
 
-    #print("\n\n" + "-" * 80)
-
+    merged_tools = []
     # 如果有工具调用，执行工具
     if tool_calls:
-        #print(f"工具调用原始数据: {tool_calls[:200]}...")  # 只显示前200个字符
-        tool_calls_list = tool_calls
-
-        # 合并工具调用碎片
         # 第一个元素是完整结构（但arguments为空），后续元素是arguments的碎片
-        merged_tools = []
-        if tool_calls_list:
-            # 取第一个完整的工具调用结构
-            base_tool = tool_calls_list[0]
+        # 取第一个完整的工具调用结构
+        base_tool = tool_calls[0]
+        print(f"\n第一个工具调用: {base_tool}")
+        # 拼接后续的arguments碎片
+        arguments_str = ""
+        for i in range(1, len(tool_calls)):
+            fragment = tool_calls[i]
+            print(f"\n第{i}个工具调用: {fragment}")
+            if fragment.get('function', {}).get('arguments'):
+                arguments_str += fragment['function']['arguments']
 
-            # 拼接后续的arguments碎片
-            arguments_str = ""
-            for i in range(1, len(tool_calls_list)):
-                fragment = tool_calls_list[i]
-                if fragment.get('function', {}).get('arguments'):
-                    arguments_str += fragment['function']['arguments']
+        # 更新第一个工具调用的arguments
+        if arguments_str:
+            base_tool['function']['arguments'] = arguments_str
 
-            # 更新第一个工具调用的arguments
-            if arguments_str:
-                base_tool['function']['arguments'] = arguments_str
-
-            merged_tools.append(base_tool)
+        merged_tools.append(base_tool)
             #print(f"\n合并后的工具调用: {merged_tools}")
 
         # 批量添加任务
@@ -100,13 +96,13 @@ def test_math_tools():
         for tool in merged_tools:
             task_id = mcp_client.add(tool)
             task_ids.append(task_id)
-            #print(f"✓ 已添加任务: {tool['function']['name']}")
+            print(f"✓ 已添加任务: {tool['function']['name']}")
 
         # 批量获取结果
         #print("\n执行结果:")
         for task_id in task_ids:
             result = mcp_client.get_result(task_id)
-            #print(f"  结果: {result}")
+            print(f"  结果: {result}")
     else:
         print("未检测到工具调用")
 
