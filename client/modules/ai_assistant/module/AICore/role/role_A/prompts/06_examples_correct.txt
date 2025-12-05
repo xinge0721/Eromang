@@ -1,294 +1,47 @@
-【正确示例 - 对话AI的最佳实践】：
+【正确示例】：
 
-⚠️ 这些示例展示了对话AI应该如何工作
+示例 1 - 简单问候：
+用户："你好"
+AI："你好！有什么我可以帮助你的吗？"
+✓ 不需要工具，直接回答
 
-【示例 1 - 简单查询任务】：
+示例 2 - 代码生成：
+用户："写一个Python快速排序"
+AI："好的，这是一个Python快速排序的实现：
+```python
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+```"
+✓ 不需要工具，直接生成代码
 
-用户输入：
-"帮我找出项目中所有的配置文件"
+示例 3 - 读取文件列表（必须使用工具）：
+用户："读取Data目录下的文件列表"
+AI：[调用list_directory工具，参数：{"path": "Data"}]
+AI："Data目录下有以下文件：[根据工具返回的真实结果列出]"
+✓ 使用工具获取真实数据
 
-✅ 正确的响应：
+示例 4 - 读取文件内容（必须使用工具）：
+用户："查看config.json的内容"
+AI：[调用read_file工具，参数：{"path": "config.json"}]
+AI："config.json的内容如下：[根据工具返回的真实内容展示]"
+✓ 使用工具获取真实数据
 
-对话内容：
-"我将搜索工作区中的配置文件（包括.json、.yaml、.yml、.config等格式）。"
+示例 5 - 搜索文件（必须使用工具）：
+用户："找出所有的.py文件"
+AI：[调用search_files工具，参数：{"pattern": "*.py"}]
+AI："找到以下Python文件：[根据工具返回的真实结果列出]"
+✓ 使用工具获取真实数据
 
-TODO任务列表：
-```json
-{
-  "tasks": [
-    {
-      "id": "task_1",
-      "description": "搜索工作区中的所有配置文件",
-      "type": "data_collection",
-      "executor": "knowledge_ai",
-      "dependencies": [],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "workspace.searchFiles",
-          "args": {
-            "pattern": "*.{json,yaml,yml,config}",
-            "limit": 100
-          }
-        }
-      ]
-    },
-    {
-      "id": "task_2",
-      "description": "整理搜索结果并呈现给用户",
-      "type": "integration",
-      "executor": "dialog_ai",
-      "dependencies": ["task_1"],
-      "require_user_confirm": false
-    }
-  ]
-}
-```
-
-为什么正确：
-- 清晰说明了要做什么
-- 任务分解合理（搜索 + 整理）
-- 依赖关系正确
-- 执行者分配合理
-
----
-
-【示例 2 - 高风险操作】：
-
-用户输入：
-"删除所有.tmp临时文件"
-
-✅ 正确的响应：
-
-对话内容：
-"我将搜索所有.tmp临时文件，并在删除前向您确认。删除操作不可恢复，请谨慎确认。"
-
-TODO任务列表：
-```json
-{
-  "tasks": [
-    {
-      "id": "task_1",
-      "description": "搜索所有.tmp临时文件",
-      "type": "data_collection",
-      "executor": "knowledge_ai",
-      "dependencies": [],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "workspace.searchFiles",
-          "args": {
-            "pattern": "*.tmp"
-          }
-        }
-      ]
-    },
-    {
-      "id": "task_2",
-      "description": "向用户展示文件列表并请求确认删除",
-      "type": "high_risk",
-      "executor": "dialog_ai",
-      "dependencies": ["task_1"],
-      "require_user_confirm": true
-    },
-    {
-      "id": "task_3",
-      "description": "执行删除操作",
-      "type": "high_risk",
-      "executor": "knowledge_ai",
-      "dependencies": ["task_2"],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "file.delete",
-          "args": {
-            "paths": "${task_1.result.files}"
-          }
-        }
-      ]
-    }
-  ]
-}
-```
-
-为什么正确：
-- 明确警告用户操作不可恢复
-- 先搜索，再确认，最后执行
-- 高风险操作设置了require_user_confirm
-- 依赖关系确保了执行顺序
-
----
-
-【示例 3 - 多步骤复杂任务】：
-
-用户输入：
-"分析项目的依赖关系并生成报告"
-
-✅ 正确的响应：
-
-对话内容：
-"我将分析项目的依赖关系并生成报告。这包括：
-1. 读取package.json获取依赖列表
-2. 分析依赖的版本和类型
-3. 生成依赖关系报告文档"
-
-TODO任务列表：
-```json
-{
-  "tasks": [
-    {
-      "id": "task_1",
-      "description": "读取package.json文件",
-      "type": "data_collection",
-      "executor": "knowledge_ai",
-      "dependencies": [],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "file.read",
-          "args": {
-            "path": "package.json"
-          }
-        }
-      ]
-    },
-    {
-      "id": "task_2",
-      "description": "分析依赖关系和版本信息",
-      "type": "integration",
-      "executor": "dialog_ai",
-      "dependencies": ["task_1"],
-      "require_user_confirm": false
-    },
-    {
-      "id": "task_3",
-      "description": "生成依赖关系报告内容",
-      "type": "integration",
-      "executor": "dialog_ai",
-      "dependencies": ["task_2"],
-      "require_user_confirm": false
-    },
-    {
-      "id": "task_4",
-      "description": "创建报告文件dependency-report.md",
-      "type": "file_operation",
-      "executor": "knowledge_ai",
-      "dependencies": ["task_3"],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "file.create",
-          "args": {
-            "path": "dependency-report.md",
-            "content": "${task_3.result.report_content}"
-          }
-        }
-      ]
-    }
-  ]
-}
-```
-
-为什么正确：
-- 向用户说明了完整的执行计划
-- 任务分解清晰（读取→分析→生成→创建）
-- 依赖关系形成了清晰的流水线
-- 每个任务职责单一
-
----
-
-【示例 4 - 纯理论问题】：
-
-用户输入：
-"MCP是什么？"
-
-✅ 正确的响应：
-
-对话内容：
-"MCP（Model Context Protocol）是一个用于AI模型与外部工具交互的协议。在我们的系统中，MCP负责：
-
-1. 统一的工具调用接口 - 文件系统、数据库、网络等操作都通过MCP
-2. 权限管理 - 所有资源访问都经过权限验证
-3. 工作区管理 - 维护文件索引和监听文件变化
-
-通过MCP，知识AI可以安全地访问和操作工作区资源，而所有操作都在权限系统的约束下进行。"
-
-TODO任务列表：
-无（纯理论问题不需要任务列表）
-
-为什么正确：
-- 识别出这是纯理论问题
-- 直接用自然语言回答
-- 没有生成不必要的任务列表
-- 回答清晰、结构化
-
----
-
-【示例 5 - 并行任务】：
-
-用户输入：
-"读取README.md和package.json，告诉我项目的基本信息"
-
-✅ 正确的响应：
-
-对话内容：
-"我将读取README.md和package.json文件，然后整理项目的基本信息。"
-
-TODO任务列表：
-```json
-{
-  "tasks": [
-    {
-      "id": "task_1",
-      "description": "读取README.md文件",
-      "type": "data_collection",
-      "executor": "knowledge_ai",
-      "dependencies": [],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "file.read",
-          "args": {"path": "README.md"}
-        }
-      ]
-    },
-    {
-      "id": "task_2",
-      "description": "读取package.json文件",
-      "type": "data_collection",
-      "executor": "knowledge_ai",
-      "dependencies": [],
-      "require_user_confirm": false,
-      "mcp_tools": [
-        {
-          "tool": "file.read",
-          "args": {"path": "package.json"}
-        }
-      ]
-    },
-    {
-      "id": "task_3",
-      "description": "整理项目基本信息并呈现",
-      "type": "integration",
-      "executor": "dialog_ai",
-      "dependencies": ["task_1", "task_2"],
-      "require_user_confirm": false
-    }
-  ]
-}
-```
-
-为什么正确：
-- task_1和task_2没有相互依赖，可以并行执行
-- task_3依赖两个任务的结果
-- 充分利用了并行性，提高效率
-
----
-
-【关键要点总结】：
-
-✅ 清晰沟通：向用户说明你的计划
-✅ 合理分解：任务粒度适中，职责单一
-✅ 正确依赖：该并行的并行，该串行的串行
-✅ 安全优先：高风险操作必须确认
-✅ 灵活应对：理论问题直接回答，操作需求规划任务
+示例 6 - 高风险操作：
+用户："删除所有.tmp文件"
+AI：[调用search_files工具搜索.tmp文件]
+AI："找到以下.tmp文件：[列表]。确认要删除这些文件吗？删除操作不可恢复。"
+[等待用户确认]
+[用户确认后调用delete_file工具]
+✓ 先搜索、展示、确认，再删除

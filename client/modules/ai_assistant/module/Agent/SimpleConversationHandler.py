@@ -42,16 +42,16 @@ class SimpleConversationHandler:
         self.knowledge_history = knowledge_history
 
         # 等待 MCP 初始化
-        print("等待 MCP 客户端初始化...")
+        #print("等待 MCP 客户端初始化...")
         while not self.mcp_client.get_initialized():
             time.sleep(0.1)
-        print("✓ MCP 客户端已就绪")
+        #print("✓ MCP 客户端已就绪")
 
         # 获取工具列表并注入到知识模型
         tools = self.mcp_client.list_tools()
         tool_descriptions = self._format_tool_list(tools)
         self.knowledge_history.insert("system", f"可用的 MCP 工具列表：\n{tool_descriptions}")
-        print(f"✓ 已注入 {len(tools)} 个 MCP 工具到知识模型")
+        #print(f"✓ 已注入 {len(tools)} 个 MCP 工具到知识模型")
 
     def _format_tool_list(self, tools):
         """格式化工具列表为可读文本"""
@@ -62,9 +62,9 @@ class SimpleConversationHandler:
 
     def run(self):
         """运行对话循环"""
-        print("\n" + "=" * 80)
-        print("AI 助手已启动（输入 'exit' 或 'quit' 退出）")
-        print("=" * 80 + "\n")
+        #print("\n" + "=" * 80)
+        #print("AI 助手已启动（输入 'exit' 或 'quit' 退出）")
+        #print("=" * 80 + "\n")
 
         while True:
             # 获取用户输入
@@ -74,17 +74,17 @@ class SimpleConversationHandler:
                 continue
 
             if user_input.lower() in ['exit', 'quit', '退出']:
-                print("\n再见！")
+                #print("\n再见！")
                 break
 
             # 处理消息
             try:
                 self.send_message(user_input)
             except KeyboardInterrupt:
-                print("\n\n对话被中断")
+                #print("\n\n对话被中断")
                 break
             except Exception as e:
-                print(f"\n✗ 错误: {e}")
+                #print(f"\n✗ 错误: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -98,10 +98,10 @@ class SimpleConversationHandler:
         3. 执行知识模型的 TODO（第一个 for 循环）
         4. 对话模型生成回答（可能也有 TODO，第二个 for 循环）
         """
-        print("\n" + "-" * 80)
+        #print("\n" + "-" * 80)
 
         # ===== 步骤 1: 使用知识模型判断是否需要数据收集 =====
-        print("\n[步骤 1] 分析问题类型...")
+        #print("\n[步骤 1] 分析问题类型...")
 
         # 简单的启发式判断：包含特定关键词则需要知识模型
         keywords_need_knowledge = [
@@ -113,15 +113,17 @@ class SimpleConversationHandler:
         need_knowledge = any(keyword in message.lower() for keyword in keywords_need_knowledge)
 
         if need_knowledge:
-            print(f"✓ 判断结果: 需要知识模型（检测到数据操作关键词）")
+            #print(f"✓ 判断结果: 需要知识模型（检测到数据操作关键词）")
+            pass
         else:
-            print(f"✓ 判断结果: 不需要知识模型（简单对话）")
+            #print(f"✓ 判断结果: 不需要知识模型（简单对话）")
+            pass
 
         knowledge_results = []
 
         # ===== 步骤 2: 如果需要知识模型，生成并执行 TODO =====
         if need_knowledge:
-            print("\n[步骤 2] 知识模型生成 TODO 列表...")
+            #print("\n[步骤 2] 知识模型生成 TODO 列表...")
 
             # 构造 TODO 生成 prompt
             todo_prompt = f"""用户问题：{message}
@@ -147,8 +149,8 @@ class SimpleConversationHandler:
             response = ""
             for chunk in self.knowledge_callback(todo_prompt):
                 response += chunk
-                print(chunk, end='', flush=True)
-            print()
+                #print(chunk, end='', flush=True)
+            #print()
 
             # 解析并调用 create_task_list
             try:
@@ -160,7 +162,7 @@ class SimpleConversationHandler:
                     task_data = json.loads(json_str)
 
                     # 调用 MCP 创建任务列表
-                    print("\n[步骤 3] 创建任务列表...")
+                    #print("\n[步骤 3] 创建任务列表...")
                     task_id = self.mcp_client.add({
                         "name": "create_task_list",
                         "arguments": task_data
@@ -169,14 +171,14 @@ class SimpleConversationHandler:
 
                     # 解析 list_id
                     result_text = result.content[0].text if hasattr(result, 'content') else str(result)
-                    print(f"✓ {result_text}")
+                    #print(f"✓ {result_text}")
 
                     result_dict = json.loads(result_text)
                     list_id = result_dict.get("list_id")
 
                     if list_id:
                         # ===== 第一个 for 循环：执行知识模型的 TODO =====
-                        print("\n[步骤 4] 执行任务列表...")
+                        #print("\n[步骤 4] 执行任务列表...")
 
                         while True:
                             # 获取下一个任务
@@ -189,7 +191,7 @@ class SimpleConversationHandler:
                             next_task_data = json.loads(next_task_text)
 
                             if not next_task_data.get("has_next"):
-                                print("✓ 所有任务已完成")
+                                #print("✓ 所有任务已完成")
                                 break
 
                             task = next_task_data.get("task")
@@ -197,8 +199,8 @@ class SimpleConversationHandler:
                             tool_name = task.get("tool")
                             arguments = task.get("arguments", {})
 
-                            print(f"\n  执行任务 {task_id_str}: {task.get('description')}")
-                            print(f"    工具: {tool_name}")
+                            #print(f"\n  执行任务 {task_id_str}: {task.get('description')}")
+                            #print(f"    工具: {tool_name}")
 
                             # 更新任务状态为 running
                             self.mcp_client.add({
@@ -219,7 +221,7 @@ class SimpleConversationHandler:
                                 tool_result = self.mcp_client.get_result(tool_task_id, timeout=10)
                                 tool_result_text = tool_result.content[0].text if hasattr(tool_result, 'content') else str(tool_result)
 
-                                print(f"    ✓ 结果: {tool_result_text[:200]}...")
+                                #print(f"    ✓ 结果: {tool_result_text[:200]}...")
 
                                 # 更新任务状态为 completed
                                 self.mcp_client.add({
@@ -239,7 +241,7 @@ class SimpleConversationHandler:
                                 })
 
                             except Exception as e:
-                                print(f"    ✗ 失败: {e}")
+                                #print(f"    ✗ 失败: {e}")
                                 # 更新任务状态为 failed
                                 self.mcp_client.add({
                                     "name": "update_task_status",
@@ -258,15 +260,15 @@ class SimpleConversationHandler:
                         })
                         summary_result = self.mcp_client.get_result(task_id, timeout=10)
                         summary_text = summary_result.content[0].text if hasattr(summary_result, 'content') else str(summary_result)
-                        print(f"\n✓ 任务摘要: {summary_text}")
+                        #print(f"\n✓ 任务摘要: {summary_text}")
 
             except Exception as e:
-                print(f"✗ 处理 TODO 列表失败: {e}")
+                #print(f"✗ 处理 TODO 列表失败: {e}")
                 import traceback
                 traceback.print_exc()
 
         # ===== 步骤 5: 对话模型生成最终回答 =====
-        print("\n[步骤 5] 对话模型生成回答...")
+        #print("\n[步骤 5] 对话模型生成回答...")
 
         # 注入明确的指令：现在是对话阶段，不是任务规划阶段
         dialogue_instruction = """
@@ -293,12 +295,12 @@ class SimpleConversationHandler:
             self.dialogue_history.insert("system", f"知识模型收集的数据：\n{results_summary}")
 
         # 调用对话模型生成最终回答
-        print("\nAI: ", end='', flush=True)
+        #print("\nAI: ", end='', flush=True)
         response = ""
         for chunk in self.dialogue_callback(message):
             response += chunk
-            print(chunk, end='', flush=True)
-        print("\n")
+            #print(chunk, end='', flush=True)
+        #print("\n")
 
         # 清理临时注入的指令和知识结果
         try:
@@ -315,6 +317,7 @@ class SimpleConversationHandler:
             for idx in sorted(indices_to_delete, reverse=True):
                 self.dialogue_history.delete(idx)
         except Exception as e:
-            print(f"清理临时消息失败: {e}")
-
-        print("-" * 80)
+            #print(f"清理临时消息失败: {e}")
+            import traceback
+            traceback.print_exc()
+        #print("-" * 80)

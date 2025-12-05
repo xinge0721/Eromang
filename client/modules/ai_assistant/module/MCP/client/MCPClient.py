@@ -6,6 +6,9 @@ from mcp.client.stdio import stdio_client
 import queue
 import uuid
 import os
+import ast
+import json
+import re
 class MCPClient:
     """简单的线程类"""
     def __init__(self):
@@ -124,7 +127,7 @@ class MCPClient:
                 await self.context.__aexit__(None, None, None)
 
     # ==================== 添加任务 ====================
-    def add(self, data: dict) -> str:
+    def add(self, _data: dict) -> str:
         """
         添加任务到队列
 
@@ -134,11 +137,11 @@ class MCPClient:
         返回:
             任务的 UUID
         """
-        if data is None:
+        if _data is None:
             raise ValueError("数据不能为空")
         if self.running is False:
             raise ValueError("MCP客户端未启动")
-
+        data = self.OpenAI_to_MCP(_data) # 将OpenAI工具转换为MCP工具
         # 生成 UUID
         task_id = str(uuid.uuid4())
         task = {
@@ -194,10 +197,153 @@ class MCPClient:
             raise ValueError("工具列表为空")
         if len(self.tools) == 0:
             raise ValueError("工具列表为空")
-        return self.tools
+        return [self.MCP_to_OpenAI(tool) for tool in self.tools] # 将MCP工具转换为OpenAI工具
 
     def get_initialized(self) -> bool:
         return self.initialized
+
+    def MCP_to_OpenAI(self, tool) -> dict:
+        """将MCP工具转换为OpenAI工具"""
+        return {
+            "type": "function",
+            "function": {
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.inputSchema
+            }
+        }
+    def OpenAI_to_MCP(self, tool: dict) -> dict:
+        """将OpenAI格式转换为MCP格式
+
+        支持两种OpenAI格式：
+        1. 工具定义格式（tool definition）：包含 description 和 parameters
+        2. 工具调用格式（tool call）：包含 name 和 arguments
+        """
+        function = tool.get("function", {})
+
+        # 判断是工具调用格式还是工具定义格式
+        if "arguments" in function:
+            # 工具调用格式：只需要 name 和 arguments
+            arguments = function["arguments"]
+            # 如果 arguments 是字符串，需要解析为字典
+            if isinstance(arguments, str):
+                # 处理空字符串的情况
+                if arguments.strip() == "":
+                    arguments = {}
+                else:
+                    arguments = json.loads(arguments)
+
+            return {
+                "name": function["name"],
+                "arguments": arguments
+            }
+        else:
+            # 工具定义格式：需要 description 和 inputSchema
+            return {
+                "name": function["name"],
+                "description": function.get("description", ""),
+                "inputSchema": function.get("parameters", {})
+            }
+    def OpenAI_str_to_dict(self, input_str: str) -> dict:
+        """将OpenAI工具列表转换为MCP工具列表"""
+        
+        """
+        主转换函数，处理给定的碎片化字符串
+        
+        参数:
+        input_str: 输入的碎片化字符串
+        
+        返回:
+        list: 转换后的字典列表
+        """
+        # 清理输入字符串
+        # 移除开头和结尾的多余引号（如果存在）
+        cleaned_str = input_str.strip('"').strip("'")
+        
+        # 尝试直接解析整个字符串（如果它原本是一个列表）
+        try:
+            # 尝试使用ast.literal_eval解析
+            result = ast.literal_eval(cleaned_str)
+            if isinstance(result, list):
+                return result
+        except (SyntaxError, ValueError):
+            pass
+        
+        # 如果直接解析失败，尝试处理碎片化的字符串
+        # 查找所有可能包含字典的片段
+        dict_patterns = []
+        
+        # 方法1: 查找所有大括号对
+        stack = []
+        start_idx = -1
+        
+        for i, char in enumerate(cleaned_str):
+            if char == '{':
+                if not stack:
+                    start_idx = i
+                stack.append(char)
+            elif char == '}':
+                if stack:
+                    stack.pop()
+                    if not stack and start_idx != -1:
+                        dict_patterns.append(cleaned_str[start_idx:i+1])
+                        start_idx = -1
+        
+        # 解析找到的字典字符串
+        result = []
+        for pattern in dict_patterns:
+            try:
+                # 尝试使用ast.literal_eval
+                dict_obj = ast.literal_eval(pattern)
+                result.append(dict_obj)
+            except (SyntaxError, ValueError):
+                # 尝试使用json解析（替换单引号为双引号）
+                try:
+                    json_str = pattern.replace("'", '"').replace('None', 'null').replace('True', 'true').replace('False', 'false')
+                    dict_obj = json.loads(json_str)
+                    result.append(dict_obj)
+                except json.JSONDecodeError:
+                    print(f"警告: 无法解析模式: {pattern}")
+        
+        # 如果没有找到任何字典，尝试使用parse_fragmented_string方法
+        if not result:
+            result = self.parse_fragmented_string(cleaned_str)
+        
+        return result
+    def parse_fragmented_string(self, fragmented_str) :
+        """
+        将碎片化的字符串转化为字典列表
+        
+        参数:
+        fragmented_str: 被拆分成多个片段的字符串
+        
+        返回:
+        list: 字典列表
+        """
+        result = []
+        
+        # 方法1: 尝试使用正则表达式提取完整的字典字符串
+        pattern = r"\{[^{}]*\{[^{}]*\}[^{}]*\}|\{[^{}]*\}"
+        matches = re.findall(pattern, fragmented_str)
+        
+        for match in matches:
+            try:
+                # 尝试使用ast.literal_eval安全地解析字符串
+                dict_obj = ast.literal_eval(match)
+                result.append(dict_obj)
+            except (SyntaxError, ValueError):
+                # 如果失败，尝试修复常见的JSON格式问题
+                try:
+                    # 替换单引号为双引号用于JSON解析
+                    json_str = match.replace("'", '"')
+                    dict_obj = json.loads(json_str)
+                    result.append(dict_obj)
+                except json.JSONDecodeError:
+                    # 如果还是失败，尝试手动修复
+                    print(f"无法解析的片段: {match}")
+                    continue
+        
+        return result
 
 # ==================== 测试代码 ====================
 if __name__ == "__main__":

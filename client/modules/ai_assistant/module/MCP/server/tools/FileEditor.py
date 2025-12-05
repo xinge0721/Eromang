@@ -133,6 +133,22 @@ class FileEditor:
         with open(filepath, 'a', encoding=_encoding) as f:
             f.write(content + '\n')
 
+    # # ================ 添加行（批量） ================
+    # def add_arr(self,filepath,batch:dict, _encoding='utf-8'):
+    #     """
+    #     添加行（批量）
+    #     :param filepath: 文件路径
+    #     :param batch: 批量数据:dict，如：{"line_num": "行号", "content": "内容"}
+    #     :param _encoding: 文件编码
+    #     :return: 是否成功
+    #     :error: 文件不存在
+    #     """
+    #     if not os.path.exists(filepath):
+    #         return False
+    #     # 添加行
+    #     for f : batch:
+
+
     # ================ 清空文件 ================
     def clear_file(self, filepath,_encoding='utf-8'):
         """
@@ -149,6 +165,7 @@ class FileEditor:
         # 清空文件
         with open(filepath, 'w', encoding=_encoding) as f: # 用'w'模式写入。只写模式打开文件，或文件存在，会清空原有内容，即覆盖写
             pass
+
 
     # ================ JSON文件操作 ================
     #  -------------- 读取JSON文件 --------------

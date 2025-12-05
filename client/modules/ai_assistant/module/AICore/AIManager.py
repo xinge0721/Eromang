@@ -317,7 +317,7 @@ class AIFactory:
         else:
             raise ValueError(f"不支持的供应商: {vendor}")
 
-    def knowledge_callback(self, message: str) -> Generator[str, None, None]:
+    def knowledge_callback(self, message: str) -> Generator[dict, None, None]:
         """
         知识模型流式输出回调函数
 
@@ -327,7 +327,7 @@ class AIFactory:
             message: 用户输入的消息
 
         返回:
-            生成器，逐块yield输出的内容
+            生成器，逐块yield输出的内容和类型
 
         异常:
             RuntimeError: 知识模型客户端未连接
@@ -341,7 +341,7 @@ class AIFactory:
         for chunk in self.knowledge_ai_client.send_stream(message):
             yield chunk
 
-    def dialogue_callback(self, message: str) -> Generator[str, None, None]:
+    def dialogue_callback(self, message: str) -> Generator[dict, None, None]:
         """
         对话模型流式输出回调函数
 
@@ -351,7 +351,7 @@ class AIFactory:
             message: 用户输入的消息
 
         返回:
-            生成器，逐块yield输出的内容
+            生成器，逐块yield输出的内容和类型
 
         异常:
             RuntimeError: 对话模型客户端未连接
@@ -364,3 +364,25 @@ class AIFactory:
             raise RuntimeError("对话模型客户端未连接")
         for chunk in self.dialogue_ai_client.send_stream(message):
             yield chunk
+
+    def add_tools(self, tools: list, model_type: str = "dialogue") -> None:
+        """
+        为指定模型添加工具列表
+        
+        参数:
+            tools: 工具列表，符合OpenAI Function Calling格式
+            model_type: 模型类型，"dialogue"（对话模型）或"knowledge"（知识模型）
+        异常:
+            RuntimeError: 指定的模型未连接
+            ValueError: model_type参数无效
+        """
+        if model_type == "dialogue":
+            if not self.dialogue_ai:
+                raise RuntimeError("对话模型未连接")
+            self.dialogue_ai.set_tools(tools)
+        elif model_type == "knowledge":
+            if not self.knowledge_ai:
+                raise RuntimeError("知识模型未连接")
+            self.knowledge_ai.set_tools(tools)
+        else:
+            raise ValueError(f"无效的model_type: {model_type}，必须是'dialogue'或'knowledge'")

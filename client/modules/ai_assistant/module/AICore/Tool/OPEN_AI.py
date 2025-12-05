@@ -17,7 +17,7 @@ class OPEN_AI:
             get_params_callback_stream: Callable[[list], dict],  # 接受list(对话历史)，返回dict(请求参数)   - 流式参数生成回调函数
             token_callback: Callable[[str], int],        # 接受str(内容)，返回int(token数)
             is_stream_end_callback: Callable[[dict], bool] = None,  # 接受dict(chunk)，返回bool(是否结束) - 判断流式是否结束
-            extract_stream_callback: Callable[[dict], str] = None,   # 接受dict(chunk)，返回str(内容) - 提取流式内容
+            extract_stream_callback: Callable[[dict], dict] = None,   # 接受dict(chunk)，返回dict({"类型": 数据}) - 提取流式内容
             validate_file_callback: Callable[[str, str], tuple] = None,  # 接受str(file_path), str(purpose)，返回tuple(bool, str) - 验证文件是否合法
             get_upload_params_callback: Callable[[str], dict] = None,  # 接受str(purpose)，返回dict(上传参数) - 生成上传参数
             role_path: str = None  # role目录路径（必需），指向包含assistant.json的role目录，用于区分不同模型
@@ -86,6 +86,7 @@ class OPEN_AI:
             max_tokens=self._max_tokens
         ) # 创建历史记录，token_callback为计算token的回调函数
 
+        self._history.clear() #初始化的时候，清空历史，防止上一轮的数据，干扰到这一轮
 
     #  ================ 上传文件 ================
     def upload_file(self, file_path: str, purpose: str = "assistants"):
@@ -283,7 +284,7 @@ class OPEN_AI:
             problem: 用户问题（字符串）
         
         返回:
-            生成器（Generator），每次 yield 返回一个 content 片段（字符串）
+            生成器（Generator），每次 yield 返回一个 content 片段（字符串） 和 类型（content或tool_calls）
             
         注意:
             - 需要在初始化时提供 extract_stream_callback 来提取流式内容
@@ -298,8 +299,6 @@ class OPEN_AI:
             raise RuntimeError("使用流式输出必须提供 extract_stream_callback 回调函数")
         
         # 验证输入
-        if not isinstance(problem, str):
-            raise TypeError("problem 必须是字符串类型")
         if not problem.strip():
             raise ValueError("problem 不能为空或空白字符串")
         
@@ -329,9 +328,9 @@ class OPEN_AI:
             stream = self._client.chat.completions.create(**request_params)
             
             # 遍历流式响应
-            for chunk in stream:
+            for chunk in stream: 
                 # 将chunk转换为dict（OpenAI返回的是对象，需要转换为dict供回调使用）
-                try:
+                try: # 将chunk转换为dict
                     chunk_dict = chunk.model_dump() if hasattr(chunk, 'model_dump') else chunk.dict()
                 except:
                     # 如果转换失败，跳过这个chunk
@@ -347,21 +346,34 @@ class OPEN_AI:
                 
                 # 使用回调提取内容
                 try:
-                    content = self._extract_stream_callback(chunk_dict)
+                    result_dict = self._extract_stream_callback(chunk_dict)
+
+                    # 如果返回的不是字典，跳过
+                    if not isinstance(result_dict, dict):
+                        continue
+
+                    # 提取类型和数据
                     
+                    data_type = list(result_dict.keys())[0] if result_dict else "None"#提取类型
+                    content = result_dict.get(data_type)#提取数据
+
                     # 如果提取的内容为空或None，跳过
                     if content is None or content == "":
                         continue
-                    
-                    if not isinstance(content, str):
-                        content = str(content)
-                    
-                    # 累积内容
-                    full_response += content
-                    
-                    # yield 当前片段
-                    yield content
-                    
+
+                    # 如果类型是None，跳过
+                    if data_type == "None":
+                        continue
+
+                    # 如果是字符串类型（content或thinking），累积到full_response
+                    if data_type in ["content", "thinking"]:
+                        if not isinstance(content, str):
+                            content = str(content)
+                        full_response += content
+
+                    # yield 当前片段（字典格式）
+                    yield result_dict
+
                 except Exception as e:
                     # 提取内容失败时记录警告并继续
                     print(f"警告：提取流式内容时发生错误: {e}")
@@ -383,3 +395,4 @@ class OPEN_AI:
             except Exception as e:
                 # 记录错误但不影响返回（因为 API 调用成功了）
                 print(f"警告：保存 AI 回答到历史记录失败: {e}")
+

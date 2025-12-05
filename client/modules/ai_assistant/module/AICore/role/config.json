@@ -16,7 +16,7 @@
       "top_logprobs": null
     },
     "deepseek-reasoner": {
-      "base_url": "https://api.deepseek.com/v1",
+      "base_url": "https://api.deepseek.com",
       "model": "deepseek-reasoner",
       "max_tokens": 128000,
       "temperature": 1.0,

@@ -28,7 +28,6 @@ class DeepSeek:
         self.tool_choice = message.get("params").get("tool_choice", None)  # 工具选择策略
         self.logprobs = message.get("params").get("logprobs", False)  # 是否返回log概率
         self.top_logprobs = message.get("params").get("top_logprobs", None)  # 返回top N个log概率
-
         # API模型名称到HuggingFace tokenizer路径的映射
         tokenizer_map = {
             "deepseek-chat": "deepseek-ai/DeepSeek-V2-Chat",
@@ -37,15 +36,13 @@ class DeepSeek:
         
         # 获取tokenizer路径
         tokenizer_path = tokenizer_map.get(self.model, self.model if "/" in self.model else "deepseek-ai/DeepSeek-V2-Chat")
-        
+
         # 加载tokenizer
-        print(f"正在加载 DeepSeek tokenizer: {tokenizer_path}")
         self.tokenizer = AutoTokenizer.from_pretrained(
-            tokenizer_path, 
+            tokenizer_path,
             trust_remote_code=True,
             resume_download=True
         )
-        print(f"✓ Tokenizer 加载成功")
 
         
     def set_api_key(self, api_key: str):
@@ -58,7 +55,7 @@ class DeepSeek:
         self.model = model
     
     # ================ 参数设置方法 ================
-    def set_temperature(self, temperature: float = 1.3, pattern: str = "通用对话"):
+    def set_temperature(self, temperature: float = 0, pattern: str = "通用对话"):
         """设置温度参数，范围0-2"""
         if not 0 <= temperature <= 2:
             raise ValueError("temperature 必须在 0-2 之间")
@@ -115,12 +112,17 @@ class DeepSeek:
         self.response_format = response_format
     
     def set_tools(self, tools: list):
-        """设置Function Calling工具列表"""
+        """设置Function Calling工具列表，自动转换MCP格式到OpenAI格式"""
         if not isinstance(tools, list):
             raise ValueError("tools 必须是列表类型")
         if len(tools) > 128:
             raise ValueError("tools列表最多包含128个工具")
-        self.tools = tools
+
+        # 转换MCP工具格式到OpenAI Function Calling格式
+        converted_tools = tools
+
+
+        self.tools = converted_tools
     
     def set_tool_choice(self, tool_choice):
         """设置工具选择策略"""
@@ -153,37 +155,37 @@ class DeepSeek:
             "model": self.model,
             "messages": messages,
         }
-        
+
         if self.temperature != 1.0:  # 默认值是1.0
             request_params["temperature"] = self.temperature
-            
+
         if self.top_p != 1.0:  # 默认值是1.0
             request_params["top_p"] = self.top_p
-            
+
         if self.frequency_penalty != 0.0:  # 默认值是0.0
             request_params["frequency_penalty"] = self.frequency_penalty
-            
+
         if self.presence_penalty != 0.0:  # 默认值是0.0
             request_params["presence_penalty"] = self.presence_penalty
-            
+
         if self.stop is not None:
             request_params["stop"] = self.stop
-            
+
         if self.response_format is not None and self.response_format.get("type") != "text":
             request_params["response_format"] = self.response_format
-            
+
         if self.tools is not None:
             request_params["tools"] = self.tools
-            
+
         if self.tool_choice is not None:
             request_params["tool_choice"] = self.tool_choice
-            
+
         if self.logprobs:
             request_params["logprobs"] = self.logprobs
-            
+
         if self.top_logprobs is not None:
             request_params["top_logprobs"] = self.top_logprobs
-        
+
         return request_params
         
     #  ============ 生成请求参数(流式) ============
@@ -214,19 +216,38 @@ class DeepSeek:
         return False  # 其他情况都不是结束（包括 usage 为 None，或 choices 不为空等）
 
     #  ============ 提取流式信息数据 ============
-    def extract_stream_info(self, stream_options: dict) -> str:
+    def extract_stream_info(self, stream_options: dict) -> dict:
         """
-        提取流式信息数据, 提取delta.content字段，若为 usage 终结块则返回 None
+        提取流式信息数据, 提取delta.content字段或tool_calls字段，若为 usage 终结块则返回 None
         """
+
         # 如果是最后的usage块（choices==[]且usage非None），无内容，直接返回None
         choices = stream_options.get('choices', [])
+        # print(f"\n需要提取的数据是: {choices}")
         if choices == []:
-            return None
+            return {"None": None}
         if not choices or not isinstance(choices, list):
-            return None
+            return {"None": None}
         choice = choices[0]
         delta = choice.get('delta', {}) if isinstance(choice, dict) else {}
-        return delta.get('content', None)
+
+        # 优先提取文本内容
+        content = delta.get('content', None)
+        if content is not None:
+            return {"content": content}
+
+        thinking = delta.get('reasoning_content', None)
+        print(f"\n需要提取的数据是: {thinking}")
+        if thinking is not None:
+            return {"thinking": thinking}
+        # 如果没有文本内容，检查是否有工具调用
+
+        tool_calls = delta.get('tool_calls', None)
+        print(f"\n需要提取的数据是: {tool_calls}")
+        if tool_calls is not None and len(tool_calls) > 0:
+            return {"tool_calls": tool_calls}
+
+        return {"None": None}
 
     #  ============ 计算token的回调函数 ============
     def token_callback(self, content: str) -> int:
