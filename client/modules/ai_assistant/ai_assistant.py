@@ -14,9 +14,11 @@ import json
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
+import asyncio
 from module.AICore.AIManager import AIFactory
-from module.Agent.SimpleConversationHandler import SimpleConversationHandler
+from module.Agent.Agent import StateMachine
 from module.MCP.client.MCPClient import MCPClient
+import time
 
 class AIAssistant:
     """
@@ -48,54 +50,94 @@ class AIAssistant:
         #print("\n[2/3] 启动 MCP 服务...")
         self.mcp_client = MCPClient()
         self.mcp_client.start()
+
+        # 等待MCP客户端初始化完成
+        while not self.mcp_client.get_initialized():
+            time.sleep(0.1)
         #print("✓ MCP 服务启动成功")
 
-        # 创建对话处理器
-        #print("\n[3/3] 初始化对话处理器...")
-        self.handler = SimpleConversationHandler(
-            dialogue_callback=self.factory.dialogue_callback,
-            knowledge_callback=self.factory.knowledge_callback,
-            mcp_client=self.mcp_client,
-            dialogue_history=self.factory.dialogue_ai_client._history,
-            knowledge_history=self.factory.knowledge_ai_client._history
+        # 获取MCP工具列表并添加到模型
+        tools = self.mcp_client.list_tools()
+        self.factory.add_tools(tools, model_type="dialogue")
+        self.factory.add_tools(tools, model_type="knowledge")
+
+        # 创建状态机（对话处理器）
+        #print("\n[3/3] 初始化状态机...")
+        self.state_machine = StateMachine(
+            model_a_callback=self.factory.dialogue_callback,
+            model_b_callback=self.factory.knowledge_callback,
+            mcp_add_task_callback=self.mcp_client.add,
+            mcp_execute_task_callback=self.mcp_client.get_result
         )
-        #print("✓ 对话处理器初始化完成")
+        #print("✓ 状态机初始化完成")
 
         #print("\n" + "=" * 80)
         #print("初始化完成！")
         #print("=" * 80)
 
     def run(self):
-        """运行 AI 助手"""
+        """运行 AI 助手（同步入口）"""
         try:
-            self.handler.run()
+            # 使用asyncio运行异步的对话循环
+            asyncio.run(self.async_run())
         except KeyboardInterrupt:
-            #print("\n\n程序被用户中断")
+            print("\n\n程序被用户中断")
         except Exception as e:
-            #print(f"\n✗ 运行时错误: {e}")
+            print(f"\n✗ 运行时错误: {e}")
             import traceback
-            traceback.#print_exc()
+            traceback.print_exc()
         finally:
             self.cleanup()
 
+    async def async_run(self):
+        """异步运行对话循环"""
+        print("\n" + "=" * 80)
+        print("AI 助手已启动！输入 'exit' 或 'quit' 退出")
+        print("=" * 80 + "\n")
+
+        while True:
+            try:
+                # 获取用户输入
+                user_input = input("\n你: ").strip()
+
+                # 检查退出命令
+                if user_input.lower() in ['exit', 'quit', '退出']:
+                    print("\n再见！")
+                    break
+
+                # 跳过空输入
+                if not user_input:
+                    continue
+
+                # 运行状态机处理用户输入
+                print("\nAI: ", end="", flush=True)
+                await self.state_machine.run(user_input)
+
+            except KeyboardInterrupt:
+                print("\n\n对话被中断")
+                break
+            except Exception as e:
+                print(f"\n✗ 处理消息时出错: {e}")
+                import traceback
+                traceback.print_exc()
+
     def cleanup(self):
         """清理资源"""
-        #print("\n正在清理资源...")
+        print("\n正在清理资源...")
         try:
             if hasattr(self, 'mcp_client'):
                 self.mcp_client.close()
-                #print("✓ MCP 客户端已关闭")
+                print("✓ MCP 客户端已关闭")
         except Exception as e:
-            #print(f"清理资源时出错: {e}")
+            print(f"清理资源时出错: {e}")
 
 if __name__ == "__main__":
     try:
         ai_assistant = AIAssistant()
         ai_assistant.run()
     except KeyboardInterrupt:
-        #print("\n\n程序启动被中断")
+        print("\n\n程序启动被中断")
     except Exception as e:
-        #print(f"\n✗ 启动失败: {e}")
+        print(f"\n✗ 启动失败: {e}")
         import traceback
-        traceback.#print_exc()  
-
+        traceback.print_exc()

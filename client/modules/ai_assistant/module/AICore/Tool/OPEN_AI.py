@@ -206,13 +206,17 @@ class OPEN_AI:
             raise RuntimeError(f"上传文件时发生错误: {e}")
 
     #  ================ 发送请求 （非流式）================
-    def send(self, problem: str):
+    def send(self, problem: str, role: str = "user"):
         """
-        发送问题到 OpenAI API 并获取回答
-        
+        发送消息到 OpenAI API 并获取回答
+
         参数:
-            problem: 用户问题（字符串）
-        
+            problem: 消息内容（字符串）
+            role: 消息角色，可选值：
+                - "user": 用户消息（默认）
+                - "system": 系统消息（用于MCP工具结果回传等）
+                - "assistant": 助手消息（特殊场景）
+
         返回:
             API 的回答内容
         """
@@ -221,15 +225,23 @@ class OPEN_AI:
             raise TypeError("problem 必须是字符串类型")
         if not problem.strip():
             raise ValueError("problem 不能为空或空白字符串")
-        
+        if not isinstance(role, str):
+            raise TypeError("role 必须是字符串类型")
+
         problem = problem.strip()
-        
-        # 先保存用户的问题到历史
+        role = role.strip()
+
+        # 验证角色有效性
+        valid_roles = {"user", "system", "assistant"}
+        if role not in valid_roles:
+            raise ValueError(f"role 必须是 {valid_roles} 之一，当前值为: {role}")
+
+        # 先保存消息到历史（使用指定的角色）
         try:
-            self._history.insert("user", problem)
+            self._history.insert(role, problem)
         except Exception as e:
             # 如果保存失败，记录警告但继续执行
-            print(f"警告：保存用户问题到历史记录失败: {e}")
+            print(f"警告：保存消息到历史记录失败: {e}")
         
         # 获取请求参数
         try:
@@ -276,20 +288,24 @@ class OPEN_AI:
         return response
 
     #  ================ 发送请求 （流式）================
-    def send_stream(self, problem: str):
+    def send_stream(self, problem: str, role: str = "user"):
         """
-        发送问题到 OpenAI API 并获取流式回答
-        
+        发送消息到 OpenAI API 并获取流式回答
+
         参数:
-            problem: 用户问题（字符串）
-        
+            problem: 消息内容（字符串）
+            role: 消息角色，可选值：
+                - "user": 用户消息（默认）
+                - "system": 系统消息（用于MCP工具结果回传等）
+                - "assistant": 助手消息（特殊场景）
+
         返回:
             生成器（Generator），每次 yield 返回一个 content 片段（字符串） 和 类型（content或tool_calls）
-            
+
         注意:
             - 需要在初始化时提供 extract_stream_callback 来提取流式内容
             - 可选提供 is_stream_end_callback 来判断流式是否结束
-            
+
         示例用法:
             for chunk in client.send_stream("你好"):
                 print(chunk, end="", flush=True)
@@ -297,19 +313,29 @@ class OPEN_AI:
         # 检查是否提供了必要的流式回调
         if self._extract_stream_callback is None:
             raise RuntimeError("使用流式输出必须提供 extract_stream_callback 回调函数")
-        
+
         # 验证输入
+        if not isinstance(problem, str):
+            raise TypeError("problem 必须是字符串类型")
         if not problem.strip():
             raise ValueError("problem 不能为空或空白字符串")
-        
+        if not isinstance(role, str):
+            raise TypeError("role 必须是字符串类型")
+
         problem = problem.strip()
-        
-        # 先保存用户的问题到历史
+        role = role.strip()
+
+        # 验证角色有效性
+        valid_roles = {"user", "system", "assistant"}
+        if role not in valid_roles:
+            raise ValueError(f"role 必须是 {valid_roles} 之一，当前值为: {role}")
+
+        # 先保存消息到历史（使用指定的角色）
         try:
-            self._history.insert("user", problem)
+            self._history.insert(role, problem)
         except Exception as e:
             # 如果保存失败，记录警告但继续执行
-            print(f"警告：保存用户问题到历史记录失败: {e}")
+            print(f"警告：保存消息到历史记录失败: {e}")
         
         # 获取请求参数（使用流式回调）
         try:

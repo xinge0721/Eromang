@@ -89,15 +89,10 @@ class MCPServer:
         # self.mcp.add_tool(Tool.from_function(self.workspace_manager.list_files_simple))
 
         # # TaskManager 工具
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.create_task_list))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.get_task_list))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.get_next_task))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.update_task_status))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.add_task))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.clear_task_list))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.get_task_summary))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.get_all_task_lists))
-        # self.mcp.add_tool(Tool.from_function(self.task_manager.get_task_results))
+        self.mcp.add_tool(Tool.from_function(self.task_manager.exit_task)) #退出任务
+        self.mcp.add_tool(Tool.from_function(self.task_manager.plan_task)) #规划任务
+        self.mcp.add_tool(Tool.from_function(self.task_manager.generate_todo_list)) #生成TODO列表
+
 
         # Mathematics 工具 —— 数学工具
         self.mcp.add_tool(Tool.from_function(self.mathematics.add))

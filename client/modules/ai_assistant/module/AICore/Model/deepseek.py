@@ -1,5 +1,6 @@
 # 深度求索大模型API封装类
 import json
+import os
 from transformers import AutoTokenizer
 
 class DeepSeek:
@@ -7,41 +8,53 @@ class DeepSeek:
         self.api_key = message.get("key")
         self.base_url = message.get("params").get("base_url")
         self.model = message.get("params").get("model")
-        
+
         # ================ 基础参数 ================
         self.max_tokens = message.get("params").get("max_tokens", 32000)  # 从配置读取，默认32000
-        
+
         # ================ 采样参数 ================
         self.temperature = message.get("params").get("temperature", 1.0)  # 温度参数，范围0-2，默认1
         self.top_p = message.get("params").get("top_p", 1.0)  # 核采样参数，范围0-1，默认1
-        
+
         # ================ 惩罚参数 ================
         self.frequency_penalty = message.get("params").get("frequency_penalty", 0.0)  # 频率惩罚，范围-2到2，默认0
         self.presence_penalty = message.get("params").get("presence_penalty", 0.0)  # 存在惩罚，范围-2到2，默认0
-        
+
         # ================ 控制参数 ================
         self.stop = message.get("params").get("stop", None)  # 停止词，可以是string或list（最多16个）
         self.response_format = message.get("params").get("response_format", {"type": "text"})  # 响应格式，默认text
-        
+
         # ================ 高级功能参数 ================
         self.tools = message.get("params").get("tools", None)  # Function Calling工具列表
         self.tool_choice = message.get("params").get("tool_choice", None)  # 工具选择策略
         self.logprobs = message.get("params").get("logprobs", False)  # 是否返回log概率
         self.top_logprobs = message.get("params").get("top_logprobs", None)  # 返回top N个log概率
+
         # API模型名称到HuggingFace tokenizer路径的映射
         tokenizer_map = {
             "deepseek-chat": "deepseek-ai/DeepSeek-V2-Chat",
             "deepseek-reasoner": "deepseek-ai/DeepSeek-R1",
         }
-        
+
         # 获取tokenizer路径
         tokenizer_path = tokenizer_map.get(self.model, self.model if "/" in self.model else "deepseek-ai/DeepSeek-V2-Chat")
 
-        # 加载tokenizer
+        # 设置tokenizer缓存目录为AI模块的Data文件夹
+        # 获取当前文件所在目录，向上查找ai_assistant模块目录
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        ai_module_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
+        cache_dir = os.path.join(ai_module_root, "Data", "models", "tokenizers")
+
+        # 确保缓存目录存在
+        os.makedirs(cache_dir, exist_ok=True)
+
+        # 加载tokenizer（只使用本地缓存，不联网下载，并指定缓存目录）
         self.tokenizer = AutoTokenizer.from_pretrained(
             tokenizer_path,
             trust_remote_code=True,
-            resume_download=True
+            resume_download=True,
+            local_files_only=False,
+            cache_dir=cache_dir
         )
 
         
@@ -243,7 +256,7 @@ class DeepSeek:
         # 如果没有文本内容，检查是否有工具调用
 
         tool_calls = delta.get('tool_calls', None)
-        # print(f"\n需要提取的数据是: {tool_calls}")
+        print(f"\n需要提取的数据是: {tool_calls}")
         if tool_calls is not None and len(tool_calls) > 0:
             return {"tool_calls": tool_calls}
 
