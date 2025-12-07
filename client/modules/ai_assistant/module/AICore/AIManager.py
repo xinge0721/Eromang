@@ -317,7 +317,7 @@ class AIFactory:
         else:
             raise ValueError(f"不支持的供应商: {vendor}")
 
-    def knowledge_callback(self, message: str) -> Generator[dict, None, None]:
+    def knowledge_callback(self, problem: str, role: str = "user") -> Generator[dict, None, None]:
         """
         知识模型流式输出回调函数
 
@@ -338,10 +338,10 @@ class AIFactory:
         """
         if not self.knowledge_ai_client:
             raise RuntimeError("知识模型客户端未连接")
-        for chunk in self.knowledge_ai_client.send_stream(message):
+        for chunk in self.knowledge_ai_client.send_stream(problem,role):
             yield chunk
 
-    def dialogue_callback(self, message: str) -> Generator[dict, None, None]:
+    def dialogue_callback(self, problem: str, role: str = "user") -> Generator[dict, None, None]:
         """
         对话模型流式输出回调函数
 
@@ -349,6 +349,7 @@ class AIFactory:
 
         参数:
             message: 用户输入的消息
+            role: 消息角色，可选值为 "user" 或 "system"，默认为 "user"
 
         返回:
             生成器，逐块yield输出的内容和类型
@@ -362,7 +363,7 @@ class AIFactory:
         """
         if not self.dialogue_ai_client:
             raise RuntimeError("对话模型客户端未连接")
-        for chunk in self.dialogue_ai_client.send_stream(message):
+        for chunk in self.dialogue_ai_client.send_stream(problem, role):
             yield chunk
 
     def add_tools(self, tools: list, model_type: str = "dialogue") -> None:

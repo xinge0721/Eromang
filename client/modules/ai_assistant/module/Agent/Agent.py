@@ -11,11 +11,9 @@ import asyncio
 import logging
 from typing import List, Dict, Any, Generator, Tuple
 from enum import Enum
-from dataclasses import dataclass
 # 配置日志
 logger = logging.getLogger(__name__)
 
-@dataclass
 class State(Enum):
     """
     状态枚举：定义系统所有可能的状态
@@ -60,7 +58,7 @@ Agent
         self.mcp_client_execute_task_callback = mcp_client_execute_task_callback  # MCP 客户端获取结果回调函数
 
 
-    async def run(self, user_input: str):
+    def run(self, user_input: str):
         """
         运行对话循环
 
@@ -69,6 +67,9 @@ Agent
         - 直到任务完成或用户结束对话
         """
         state = State.IDLE #初始化状态为空闲状态
+
+        buffer = None #初始化缓冲区为空
+
         while True: #循环直到结束状态
             match state:
               case State.IDLE:
@@ -77,7 +78,7 @@ Agent
                 
 
                 if len(response) > 0 :  #说明此刻AI模型已经回答了问题,结束本轮对话
-                  break
+                  state = State.ENDING
                 if len(tool_calls) > 0 :  #说明此刻AI模型已经调用了工具，解析工具调用，并执行工具
                   tool_results = self.execute(self.merge(tool_calls)) # 合并并执行工具调用，获取工具执行结果
 
@@ -87,35 +88,91 @@ Agent
                       result_data = json.loads(tool_results[0]) # 解析JSON结果
                       task_type = result_data.get("task_type", "") # 获取任务类型
                       # 根据任务类型决定下一个状态
-                      match task_type:
-                        case "PLAN":
-                          state = State.COMPLEX_TASK_PLANNING # 进入复杂任务规划状态
-                        case "TODO_LIST":
-                          state = State.MODEL_B_EXECUTING # 进入模型B执行TODO状态
-                        case _:
-                          state = State.DIRECT_ANSWER # 其他情况，直接回答
+                      if task_type == "PLAN":
+                        buffer = result_data.get("description", "") # 获取规划数据
+                        state = State.COMPLEX_TASK_PLANNING # 进入复杂任务规划状态
+                      elif task_type == "EXIT":
+                        return #退出指令，直接退出
+                      else:
+                        response, tool_calls = self.gather(self.dialogue_callback(problem=str(tool_results),role= "system")) # 走到这里说明已经调用了工具，该走到根据工具返回结果回复用户
+                        return  #结束对话
                     except json.JSONDecodeError:
                       # 如果不是JSON格式（如普通工具调用结果），直接回答
-                      state = State.DIRECT_ANSWER
-                  
+                      state = State.ENDING
+                  else:
+                    state = State.ENDING
 
-              case State.MODEL_A_DECIDING:
-                state = State.DIRECT_ANSWER #模型A直接回答问题
-              case State.DIRECT_ANSWER:
-                state = State.CALL_MCP_TOOL #调用MCP工具
-              case State.CALL_MCP_TOOL:
-                state = State.COMPLEX_TASK_PLANNING #复杂任务：生成目标规划
+              case State.ENDING:
+                return #回答完问题结束问答
+
               case State.COMPLEX_TASK_PLANNING:
-                state = State.MODEL_B_JUDGING #模型B判断是否需要介入
+                message = f"""
+                请根据对话模型提供的规划，判断是否要介入,如果觉得需要介入，则强制调用工具generate_todo_list
+                数据：{buffer}
+                """
+                response, tool_calls = self.gather(self.knowledge_callback(message)) # 向知识模型提问
+                if tool_calls:#这里调用了工具说明知识模型选择介入，创建了TODO列表，准备收集数据
+                  buffer = tool_calls
+                  state = State.MODEL_B_JUDGING #模型B判断是否需要介入
+                else:#这里输出的对话，说明知识模型选择不介入，直接跳跃到对话模型的交互
+                  state = State.MODEL_A_SUMMARIZING
+
               case State.MODEL_B_JUDGING:
-                state = State.MODEL_B_EXECUTING #模型B细化规划并执行TODO
-              case State.MODEL_B_EXECUTING:
-                state = State.MODEL_A_SUMMARIZING #模型A汇总模型B的数据
+                # 执行知识模型生成的TODO列表
+                # 首先执行generate_todo_list工具调用，获取TODO列表
+                tool_results = self.execute(self.merge(buffer)) # 合并并执行工具调用，获取TODO列表
+
+                # 解析TODO列表
+                if tool_results and len(tool_results) > 0:
+                  try:
+                    todo_data = json.loads(tool_results[0]) # 解析JSON结果
+                    todo_list = todo_data.get("todo_list", []) # 获取TODO列表
+
+                    # 逐个执行TODO项
+                    all_results = [] # 存储所有TODO项的执行结果
+                    for todo_item in todo_list:
+                      # 将TODO项发给知识模型，让它调用相应的MCP工具
+                      message = f"请完成以下任务：{todo_item}"
+                      response, tool_calls = self.gather(self.knowledge_callback(message))
+
+                      # 如果知识模型调用了工具，执行工具并收集结果
+                      if tool_calls:
+                        item_results = self.execute(self.merge(tool_calls))
+                        all_results.extend(item_results)
+
+                      # 如果知识模型直接回答了，也收集回答
+                      if response:
+                        all_results.append(response)
+
+                    # 将所有结果汇总到buffer
+                    buffer = "\n".join(all_results) if all_results else ""
+                  except json.JSONDecodeError:
+                    # 如果解析失败，直接使用原始结果
+                    buffer = "\n".join(tool_results)
+                else:
+                  buffer = ""
+
+                state = State.MODEL_A_SUMMARIZING # 跳转到对话模型汇总阶段
+
               case State.MODEL_A_SUMMARIZING:
-                state = State.ENDING #结束状态
+                # 构造消息：包含用户问题和知识模型收集的数据（如果有）
+                message = f"""
+                用户问题：{user_input}
+                知识模型收集的数据：{buffer if buffer else "无"}
 
+                请基于以上信息，生成并执行TODO列表来完成用户的任务。
+                """
+                # 对话模型生成并执行TODO列表
+                response, tool_calls = self.gather(self.dialogue_callback(message) ) # 向对话模型提问
 
-    def gather(response_generator: Generator) -> Tuple[str, List[Dict[str, Any]]]:
+                if tool_calls: # 如果有工具调用，执行工具
+                  tool_results = self.execute(self.merge(tool_calls)) # 合并并执行工具调用
+                  buffer = "\n".join(tool_results) if tool_results else "" # 将结果存入buffer
+
+                # 执行完后回到IDLE，让对话模型自己决定是回答用户还是继续
+                state = State.IDLE
+
+    def gather(self,response_generator: Generator) -> Tuple[str, List[Dict[str, Any]]]:
         """
         处理AI的流式响应，提取内容和工具调用
 
@@ -139,9 +196,9 @@ Agent
             # 处理文本内容和思考过程
             if chunk_type == "content": #文本内容
                 response += content
-                print(f"[对话模型] 回答: {response}", end='', flush=True)
+                print(f"{content}", end='', flush=True)
             elif chunk_type == "thinking": #思考过程（思考无作用，仅打印，不返回）
-                print(f"[思考过程] {content}", end='', flush=True)
+                print(f"{content}", end='', flush=True)
             elif chunk_type == "tool_calls": #工具调用
                 # content是一个列表，取第一个元素
                 tool_calls.append(content[0])
@@ -262,6 +319,15 @@ Agent
 
             # 提取工具结果的文本内容
             if result.content:#如果内容不为空
-                tool_results.append(str(result.content))#添加工具执行结果
+                # result.content 是一个列表，包含 TextContent 对象
+                # 需要提取第一个 TextContent 对象的 text 属性
+                if isinstance(result.content, list) and len(result.content) > 0:
+                    # 如果是 TextContent 对象，提取 text 属性
+                    if hasattr(result.content[0], 'text'):
+                        tool_results.append(result.content[0].text)
+                    else:
+                        tool_results.append(str(result.content[0]))
+                else:
+                    tool_results.append(str(result.content))#添加工具执行结果
 
         return tool_results#返回工具执行结果列表

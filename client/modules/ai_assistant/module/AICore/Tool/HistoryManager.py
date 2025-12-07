@@ -146,11 +146,49 @@ class HistoryManager:
         try:
             if not os.path.exists(self._history_path):
                 raise ValueError("历史文件路径不存在")
-            
+
             # 重置为初始状态：只包含提示词
             self.write_JSON(self._history_path, [self._assistant_content])
         except Exception as e:
             raise RuntimeError(f"无法清空历史文件: {e}")
+
+    # ================ 清空所有 reasoning_content 字段 ===============
+    def clear_reasoning_content(self):
+        """
+        清空所有历史记录中的 reasoning_content 字段
+
+        功能：
+            遍历所有历史记录，删除每条记录中的 reasoning_content 字段（如果存在）
+            保留 role 和 content 字段不变
+
+        返回：
+            None
+
+        异常：
+            RuntimeError: 读取或写入历史文件失败
+        """
+        try:
+            # 读取当前历史
+            history = self.get()
+
+            if not history:
+                # 历史为空，无需处理
+                return
+
+            # 遍历所有记录，删除 reasoning_content 字段
+            modified = False
+            for entry in history:
+                if isinstance(entry, dict) and "reasoning_content" in entry:
+                    del entry["reasoning_content"]
+                    modified = True
+
+            # 如果有修改，写回文件
+            if modified:
+                self.write_JSON(self._history_path, history)
+
+        except Exception as e:
+            raise RuntimeError(f"清空 reasoning_content 字段失败: {e}")
+
     # ================ 获取对话历史 ===============
     def get(self) -> list:
         """
@@ -167,20 +205,35 @@ class HistoryManager:
             logger.error(f"获取对话历史失败: {e}")
             return []
     # ================ 插入对话历史 ===============
-    def insert(self, role: str, content: str):
+    def insert(self, role: str, content: str, reasoning_content: str = None):
         """
         插入单独一条对话，role 为角色（限 'user'、'system'、'assistant'），content 为问题或回答（均为字符串），追加到历史
+
+        参数:
+            role: 角色类型（'user'、'system'、'assistant'）
+            content: 消息内容
+            reasoning_content: 可选，思考过程内容（仅用于 assistant 角色）
         """
         # 严格类型检查
         if not isinstance(role, str) or not isinstance(content, str):
             raise TypeError("role 和 content 必须是字符串类型")
-        
+
+        if reasoning_content is not None and not isinstance(reasoning_content, str):
+            raise TypeError("reasoning_content 必须是字符串类型或 None")
+
         # 判断数据是否为空
         if not role.strip() or not content.strip():
             raise ValueError("role 和 content 不能为空或空白字符串")
 
         role = role.strip()
         content = content.strip()
+
+        # 处理 reasoning_content
+        if reasoning_content is not None:
+            reasoning_content = reasoning_content.strip()
+            # 如果 reasoning_content 为空字符串，设置为 None
+            if not reasoning_content:
+                reasoning_content = None
 
         # 判断角色是否为有效值
         if role not in self._valid_roles:
@@ -193,13 +246,18 @@ class HistoryManager:
                 raise ValueError("token_callback 返回了无效的 token 数")
         except Exception as e:
             raise RuntimeError(f"计算 token 时发生错误: {e}")
-        
+
         if content_token_count > self._max_tokens:
             raise ValueError("单条 content 的 token 数已超过最大限制，无法存储该对话。")
 
         # 构建新记录
         history = self.get()  # 读取历史
         entry = {"role": role, "content": content}  # 构建新记录
+
+        # 如果有 reasoning_content，添加到记录中
+        if reasoning_content is not None:
+            entry["reasoning_content"] = reasoning_content
+
         history.append(entry)  # 追加新记录
 
         # 写入历史：如果未超出 token 限制则直接写入，否则调用 trim（裁剪中负责写入）

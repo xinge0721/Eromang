@@ -347,21 +347,23 @@ class OPEN_AI:
             raise RuntimeError(f"获取流式请求参数时发生错误: {e}")
         
         # 累积完整响应内容，用于最后保存到历史
-        full_response = ""
-        
+        # 分离 content 和 thinking 的累积
+        full_response = ""  # 普通回复内容
+        full_thinking = ""  # 思考过程内容
+
         try:
             # 调用 chat.completions.create 获取流式响应
             stream = self._client.chat.completions.create(**request_params)
-            
+
             # 遍历流式响应
-            for chunk in stream: 
+            for chunk in stream:
                 # 将chunk转换为dict（OpenAI返回的是对象，需要转换为dict供回调使用）
                 try: # 将chunk转换为dict
                     chunk_dict = chunk.model_dump() if hasattr(chunk, 'model_dump') else chunk.dict()
                 except:
                     # 如果转换失败，跳过这个chunk
                     continue
-                
+
                 # 使用回调判断是否结束（如果提供了回调）
                 if self._is_stream_end_callback is not None:
                     try:
@@ -369,7 +371,7 @@ class OPEN_AI:
                             break
                     except Exception as e:
                         print(f"警告：判断流式结束时发生错误: {e}")
-                
+
                 # 使用回调提取内容
                 try:
                     result_dict = self._extract_stream_callback(chunk_dict)
@@ -379,7 +381,7 @@ class OPEN_AI:
                         continue
 
                     # 提取类型和数据
-                    
+
                     data_type = list(result_dict.keys())[0] if result_dict else "None"#提取类型
                     content = result_dict.get(data_type)#提取数据
 
@@ -391,11 +393,15 @@ class OPEN_AI:
                     if data_type == "None":
                         continue
 
-                    # 如果是字符串类型（content或thinking），累积到full_response
-                    if data_type in ["content", "thinking"]:
+                    # 分别累积 content 和 thinking
+                    if data_type == "content":
                         if not isinstance(content, str):
                             content = str(content)
                         full_response += content
+                    elif data_type == "thinking":
+                        if not isinstance(content, str):
+                            content = str(content)
+                        full_thinking += content
 
                     # yield 当前片段（字典格式）
                     yield result_dict
@@ -404,21 +410,28 @@ class OPEN_AI:
                     # 提取内容失败时记录警告并继续
                     print(f"警告：提取流式内容时发生错误: {e}")
                     continue
-                
+
         except Exception as e:
             # 如果出现错误，尝试保存已经获取的部分响应
-            if full_response:
+            if full_response or full_thinking:
                 try:
-                    self._history.insert("assistant", full_response)
+                    self._history.insert("assistant", full_response, reasoning_content=full_thinking if full_thinking else None)
                 except:
                     pass
             raise RuntimeError(f"调用 OpenAI API 流式接口时发生错误: {e}")
-        
-        # 保存完整的 AI 回答到历史
+
+        # 保存完整的 AI 回答到历史（包括 reasoning_content）
+        # 注意：只有当 full_response 不为空时才保存（content 字段不能为空）
         if full_response:
             try:
-                self._history.insert("assistant", full_response)
+                self._history.insert("assistant", full_response, reasoning_content=full_thinking if full_thinking else None)
             except Exception as e:
                 # 记录错误但不影响返回（因为 API 调用成功了）
+                print(f"警告：保存 AI 回答到历史记录失败: {e}")
+        elif full_thinking:
+            # 如果只有 thinking 没有 content，使用占位符
+            try:
+                self._history.insert("assistant", "[思考中]", reasoning_content=full_thinking)
+            except Exception as e:
                 print(f"警告：保存 AI 回答到历史记录失败: {e}")
 

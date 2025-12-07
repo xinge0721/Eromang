@@ -83,3 +83,41 @@ class TaskManager:
 
         return result
 
+    def need_intervention(self, reason: str) -> Dict[str, Any]:
+        """
+        模型B表示需要介入的工具
+        当模型B判断需要自己介入处理复杂任务时调用此工具
+
+        参数：
+            reason (str): 需要介入的原因说明
+
+        返回值：
+            Dict[str, Any]: 包含以下字段的字典
+                - task_type: 任务类型，固定为 "NEED_INTERVENTION"
+                - reason: 需要介入的原因
+        """
+        result = {
+            "task_type": "NEED_INTERVENTION",
+            "reason": reason,
+        }
+        return result
+
+    def no_intervention(self, reason: str) -> Dict[str, Any]:
+        """
+        模型B表示不需要介入的工具
+        当模型B判断不需要自己介入，对话模型可以直接处理时调用此工具
+
+        参数：
+            reason (str): 不需要介入的原因说明
+
+        返回值：
+            Dict[str, Any]: 包含以下字段的字典
+                - task_type: 任务类型，固定为 "NO_INTERVENTION"
+                - reason: 不需要介入的原因
+        """
+        result = {
+            "task_type": "NO_INTERVENTION",
+            "reason": reason,
+        }
+        return result
+

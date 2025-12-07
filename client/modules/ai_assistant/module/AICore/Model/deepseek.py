@@ -53,7 +53,7 @@ class DeepSeek:
             tokenizer_path,
             trust_remote_code=True,
             resume_download=True,
-            local_files_only=False,
+            local_files_only=True,
             cache_dir=cache_dir
         )
 

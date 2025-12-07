@@ -14,9 +14,8 @@ import json
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-import asyncio
 from module.AICore.AIManager import AIFactory
-from module.Agent.Agent import StateMachine
+from module.Agent.Agent import Agent
 from module.MCP.client.MCPClient import MCPClient
 import time
 
@@ -63,11 +62,11 @@ class AIAssistant:
 
         # 创建状态机（对话处理器）
         #print("\n[3/3] 初始化状态机...")
-        self.state_machine = StateMachine(
-            model_a_callback=self.factory.dialogue_callback,
-            model_b_callback=self.factory.knowledge_callback,
-            mcp_add_task_callback=self.mcp_client.add,
-            mcp_execute_task_callback=self.mcp_client.get_result
+        self.state_machine = Agent(
+            dialogue_callback=self.factory.dialogue_callback,
+            knowledge_callback=self.factory.knowledge_callback,
+            mcp_client_add_task_callback=self.mcp_client.add,
+            mcp_client_execute_task_callback=self.mcp_client.get_result
         )
         #print("✓ 状态机初始化完成")
 
@@ -76,10 +75,37 @@ class AIAssistant:
         #print("=" * 80)
 
     def run(self):
-        """运行 AI 助手（同步入口）"""
+        """运行 AI 助手"""
+        print("\n" + "=" * 80)
+        print("AI 助手已启动！输入 'exit' 或 'quit' 退出")
+        print("=" * 80 + "\n")
+
         try:
-            # 使用asyncio运行异步的对话循环
-            asyncio.run(self.async_run())
+            while True:
+                try:
+                    # 获取用户输入
+                    user_input = input("\n你: ").strip()
+
+                    # 检查退出命令
+                    if user_input.lower() in ['exit', 'quit', '退出']:
+                        print("\n再见！")
+                        break
+
+                    # 跳过空输入
+                    if not user_input:
+                        continue
+
+                    # 运行状态机处理用户输入
+                    print("\nAI: ", end="", flush=True)
+                    self.state_machine.run(user_input)
+
+                except KeyboardInterrupt:
+                    print("\n\n对话被中断")
+                    break
+                except Exception as e:
+                    print(f"\n✗ 处理消息时出错: {e}")
+                    import traceback
+                    traceback.print_exc()
         except KeyboardInterrupt:
             print("\n\n程序被用户中断")
         except Exception as e:
@@ -88,38 +114,6 @@ class AIAssistant:
             traceback.print_exc()
         finally:
             self.cleanup()
-
-    async def async_run(self):
-        """异步运行对话循环"""
-        print("\n" + "=" * 80)
-        print("AI 助手已启动！输入 'exit' 或 'quit' 退出")
-        print("=" * 80 + "\n")
-
-        while True:
-            try:
-                # 获取用户输入
-                user_input = input("\n你: ").strip()
-
-                # 检查退出命令
-                if user_input.lower() in ['exit', 'quit', '退出']:
-                    print("\n再见！")
-                    break
-
-                # 跳过空输入
-                if not user_input:
-                    continue
-
-                # 运行状态机处理用户输入
-                print("\nAI: ", end="", flush=True)
-                await self.state_machine.run(user_input)
-
-            except KeyboardInterrupt:
-                print("\n\n对话被中断")
-                break
-            except Exception as e:
-                print(f"\n✗ 处理消息时出错: {e}")
-                import traceback
-                traceback.print_exc()
 
     def cleanup(self):
         """清理资源"""
